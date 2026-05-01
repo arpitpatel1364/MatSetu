@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MatSetu - Booth Health Grid</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f4f3f8",
+                        "primary-fixed": "#d7e2ff",
+                        "outline": "#747780",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "on-surface-variant": "#44474f",
+                        "on-primary-container": "#89a5dd",
+                        "surface-container": "#eeedf2",
+                        "on-tertiary-container": "#d7985f",
+                        "secondary-fixed": "#dbe1ff",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#0051d5",
+                        "on-primary-fixed-variant": "#294678",
+                        "surface": "#faf9fe",
+                        "primary-container": "#1b3a6b",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#5b3000",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#fefcff",
+                        "on-background": "#1a1b1f",
+                        "surface-variant": "#e3e2e7",
+                        "tertiary-fixed": "#ffdcc1",
+                        "tertiary": "#3c1e00",
+                        "primary": "#002452",
+                        "on-tertiary-fixed": "#2e1500",
+                        "surface-container-highest": "#e3e2e7",
+                        "inverse-primary": "#acc7ff",
+                        "outline-variant": "#c4c6d0",
+                        "on-tertiary-fixed-variant": "#693c0a",
+                        "surface-dim": "#dad9de",
+                        "on-surface": "#1a1b1f",
+                        "on-secondary-fixed-variant": "#003ea8",
+                        "secondary-container": "#316bf3",
+                        "inverse-surface": "#2f3034",
+                        "on-error": "#ffffff",
+                        "background": "#faf9fe",
+                        "surface-bright": "#faf9fe",
+                        "on-secondary-fixed": "#00174b",
+                        "inverse-on-surface": "#f1f0f5",
+                        "surface-container-high": "#e9e7ec",
+                        "tertiary-fixed-dim": "#fcb87d",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#001a40",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#425e91",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#acc7ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "stack-md": "12px",
+                        "base": "8px",
+                        "stack-lg": "24px",
+                        "stack-sm": "4px",
+                        "container-padding": "32px",
+                        "sidebar-width": "280px"
+                    },
+                    "fontFamily": {
+                        "sans": ["'Public Sans'", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "h1": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-bold": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "h3": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "h2": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "button": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="bg-background font-sans text-on-surface antialiased flex min-h-screen">
+<!-- SideNavBar (Shared Component) -->
+<aside class="w-[280px] h-screen fixed left-0 top-0 border-r border-slate-200 bg-[#1B3A6B] flex flex-col z-50">
+<div class="p-6">
+<h1 class="text-xl font-black text-white tracking-wider">MatSetu (मतसेतु)</h1>
+<p class="text-slate-300 text-xs mt-1 uppercase tracking-widest font-bold">Election Management</p>
+</div>
+<nav class="flex-1 flex flex-col mt-4">
+<a class="text-slate-300 hover:bg-slate-800/50 px-6 py-4 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-button">Dashboard</span>
+</a>
+<a class="text-slate-300 hover:bg-slate-800/50 px-6 py-4 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">location_on</span>
+<span class="font-button">Worker GPS</span>
+</a>
+<a class="bg-blue-600 text-white border-l-4 border-white font-bold px-6 py-4 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="font-button">Booth Health</span>
+</a>
+<a class="text-slate-300 hover:bg-slate-800/50 px-6 py-4 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-button">Party Tally</span>
+</a>
+<a class="text-slate-300 hover:bg-slate-800/50 px-6 py-4 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-button">Audit Logs</span>
+</a>
+</nav>
+<div class="mt-auto p-6 border-t border-slate-700">
+<button class="w-full bg-[#2563EB] text-white py-3 rounded font-bold text-sm uppercase tracking-wider mb-6 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">report</span>
+                Emergency Alert
+            </button>
+<div class="space-y-4">
+<a class="flex items-center gap-3 text-slate-300 text-sm" href="#">
+<span class="material-symbols-outlined">settings</span> Settings
+                </a>
+<a class="flex items-center gap-3 text-slate-300 text-sm" href="#">
+<span class="material-symbols-outlined">help_outline</span> Support
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-[280px] flex flex-col">
+<!-- TopAppBar (Shared Component) -->
+<header class="w-full h-16 sticky top-0 bg-white border-b-2 border-slate-100 flex justify-between items-center px-8 z-40">
+<div class="flex items-center gap-4">
+<h2 class="font-h2 text-primary uppercase tracking-tight">Daskroi Constituency — 48 Booths</h2>
+<div class="h-6 w-[1px] bg-slate-200 mx-2"></div>
+<!-- Status Legend -->
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded-full bg-[#15803D]"></span>
+<span class="text-label-bold text-on-surface-variant">Healthy</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded-full bg-[#D97706]"></span>
+<span class="text-label-bold text-on-surface-variant">Warning</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded-full bg-[#B91C1C]"></span>
+<span class="text-label-bold text-on-surface-variant">Critical</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded-full bg-slate-400"></span>
+<span class="text-label-bold text-on-surface-variant">Offline</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="text-label-bold text-on-surface-variant">Auto-refresh: 30s</span>
+<div class="w-10 h-5 bg-secondary-container rounded-full relative p-1 flex items-center justify-end">
+<div class="w-3 h-3 bg-white rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary">refresh</span>
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary">help</span>
+<button class="bg-primary-container text-on-primary-container px-4 py-1.5 rounded font-button text-xs uppercase tracking-wider">Cast Vote</button>
+<div class="w-8 h-8 rounded-full bg-surface-container overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Official portrait of an election officer in a professional uniform, set against a neutral corporate background. The lighting is soft and flattering, emphasizing a clean and authoritative appearance suitable for a high-security government application. The overall aesthetic is professional and modern." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjUwxL4QefCK6x3k4ArXTI_VfZ7-7akNf-k0Ulcfep7BrKgakswHFElJb9XOeIfkzEmSbwxzItCYRFD9tyzcbmsQzpQaQHfRX0sUKshCoGB9iN5NRo889QW6k471wo4T0x1Dg2i_LmdpFxI7pc8gbmD0hZloaiRqTte-gu04E55BqnhvAzLmMleJ3HTNVJXyFv7h3NrP1M31X3SFxxBGvjh5LSNm4rqtLnuN3ZjtdfsI6kq1q-GSzeGJTrcPbe73watqJcYm9KO9A"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Dashboard View -->
+<div class="flex flex-1">
+<!-- Booth Grid Canvas -->
+<section class="flex-1 p-gutter bg-surface overflow-y-auto">
+<div class="grid grid-cols-6 gap-4">
+<!-- Iterative Booth Cards (Simulating 48) -->
+<!-- Card 1: Healthy -->
+<div class="bg-white border-2 border-[#15803D] rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between hover:bg-slate-50 transition-colors cursor-pointer group">
+<div class="flex justify-between items-start">
+<span class="text-label-bold text-primary">B-01</span>
+<div class="flex gap-0.5">
+<span class="material-symbols-outlined text-[14px] text-[#15803D]">battery_full</span>
+<span class="material-symbols-outlined text-[14px] text-[#15803D]">wifi</span>
+</div>
+</div>
+<div class="flex justify-center gap-1.5 mb-1">
+<span class="material-symbols-outlined text-[14px] text-[#15803D]" style="font-variation-settings: 'FILL' 1;">videocam</span>
+<span class="material-symbols-outlined text-[14px] text-[#15803D]">person</span>
+</div>
+<div class="text-center border-t border-slate-100 pt-1">
+<span class="font-h3 text-[14px] text-primary">842</span>
+</div>
+</div>
+<!-- Card 2: Warning -->
+<div class="bg-white border-2 border-[#D97706] rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between hover:bg-slate-50 transition-colors cursor-pointer">
+<div class="flex justify-between items-start">
+<span class="text-label-bold text-primary">B-02</span>
+<div class="flex gap-0.5">
+<span class="material-symbols-outlined text-[14px] text-[#D97706]">battery_3_bar</span>
+<span class="material-symbols-outlined text-[14px] text-[#15803D]">wifi</span>
+</div>
+</div>
+<div class="flex justify-center gap-1.5 mb-1">
+<span class="material-symbols-outlined text-[14px] text-[#15803D]" style="font-variation-settings: 'FILL' 1;">videocam</span>
+<span class="material-symbols-outlined text-[14px] text-[#15803D]">person</span>
+</div>
+<div class="text-center border-t border-slate-100 pt-1">
+<span class="font-h3 text-[14px] text-primary">612</span>
+</div>
+</div>
+<!-- Card 3: Critical -->
+<div class="bg-[#FEF2F2] border-2 border-[#B91C1C] rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between hover:bg-red-100 transition-colors cursor-pointer">
+<div class="flex justify-between items-start">
+<span class="text-label-bold text-primary">B-03</span>
+<div class="flex gap-0.5">
+<span class="material-symbols-outlined text-[14px] text-[#15803D]">battery_full</span>
+<span class="material-symbols-outlined text-[14px] text-[#B91C1C]">wifi_off</span>
+</div>
+</div>
+<div class="flex justify-center gap-1.5 mb-1">
+<span class="material-symbols-outlined text-[14px] text-[#B91C1C]" style="font-variation-settings: 'FILL' 1;">videocam_off</span>
+<span class="material-symbols-outlined text-[14px] text-[#15803D]">person</span>
+</div>
+<div class="text-center border-t border-red-200 pt-1">
+<span class="font-h3 text-[14px] text-[#B91C1C]">201</span>
+</div>
+</div>
+<!-- Card 4: Healthy -->
+<div class="bg-white border-2 border-[#15803D] rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between hover:bg-slate-50 transition-colors cursor-pointer">
+<div class="flex justify-between items-start">
+<span class="text-label-bold text-primary">B-04</span>
+<div class="flex gap-0.5">
+<span class="material-symbols-outlined text-[14px] text-[#15803D]">battery_full</span>
+<span class="material-symbols-outlined text-[14px] text-[#15803D]">wifi</span>
+</div>
+</div>
+<div class="flex justify-center gap-1.5 mb-1">
+<span class="material-symbols-outlined text-[14px] text-[#15803D]" style="font-variation-settings: 'FILL' 1;">videocam</span>
+<span class="material-symbols-outlined text-[14px] text-[#15803D]">person</span>
+</div>
+<div class="text-center border-t border-slate-100 pt-1">
+<span class="font-h3 text-[14px] text-primary">1,029</span>
+</div>
+</div>
+<!-- Card 5: Offline -->
+<div class="bg-slate-50 border-2 border-slate-400 rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between opacity-60">
+<div class="flex justify-between items-start">
+<span class="text-label-bold text-primary">B-05</span>
+<div class="flex gap-0.5">
+<span class="material-symbols-outlined text-[14px] text-slate-400">battery_unknown</span>
+<span class="material-symbols-outlined text-[14px] text-slate-400">wifi_off</span>
+</div>
+</div>
+<div class="flex justify-center gap-1.5 mb-1">
+<span class="material-symbols-outlined text-[14px] text-slate-400" style="font-variation-settings: 'FILL' 1;">videocam_off</span>
+<span class="material-symbols-outlined text-[14px] text-slate-400">person_off</span>
+</div>
+<div class="text-center border-t border-slate-200 pt-1">
+<span class="font-h3 text-[14px] text-slate-500">---</span>
+</div>
+</div>
+<!-- Card 6: Warning -->
+<div class="bg-white border-2 border-[#D97706] rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between hover:bg-slate-50 transition-colors cursor-pointer">
+<div class="flex justify-between items-start">
+<span class="text-label-bold text-primary">B-06</span>
+<div class="flex gap-0.5">
+<span class="material-symbols-outlined text-[14px] text-[#15803D]">battery_full</span>
+<span class="material-symbols-outlined text-[14px] text-[#D97706]">wifi_2_bar</span>
+</div>
+</div>
+<div class="flex justify-center gap-1.5 mb-1">
+<span class="material-symbols-outlined text-[14px] text-[#15803D]" style="font-variation-settings: 'FILL' 1;">videocam</span>
+<span class="material-symbols-outlined text-[14px] text-[#15803D]">person</span>
+</div>
+<div class="text-center border-t border-slate-100 pt-1">
+<span class="font-h3 text-[14px] text-primary">455</span>
+</div>
+</div>
+<!-- Repeat Pattern Placeholder for remaining grid (to simulate 48 items) -->
+<!-- Simulating the grid density with dummy loops in mind -->
+<div class="bg-white border-2 border-[#15803D] rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between">
+<div class="flex justify-between items-start"><span class="text-label-bold text-primary">B-07</span><div class="flex gap-0.5"><span class="material-symbols-outlined text-[14px] text-[#15803D]">battery_full</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">wifi</span></div></div>
+<div class="flex justify-center gap-1.5"><span class="material-symbols-outlined text-[14px] text-[#15803D]" style="font-variation-settings: 'FILL' 1;">videocam</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">person</span></div>
+<div class="text-center border-t border-slate-100 pt-1"><span class="font-h3 text-[14px] text-primary">788</span></div>
+</div>
+<!-- Card 8: Critical Camera Issue -->
+<div class="bg-[#FEF2F2] border-2 border-[#B91C1C] rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between">
+<div class="flex justify-between items-start"><span class="text-label-bold text-primary">B-08</span><div class="flex gap-0.5"><span class="material-symbols-outlined text-[14px] text-[#15803D]">battery_full</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">wifi</span></div></div>
+<div class="flex justify-center gap-1.5"><span class="material-symbols-outlined text-[14px] text-[#B91C1C]" style="font-variation-settings: 'FILL' 1;">videocam_off</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">person</span></div>
+<div class="text-center border-t border-red-200 pt-1"><span class="font-h3 text-[14px] text-[#B91C1C]">312</span></div>
+</div>
+<!-- (Generating representative subset to fill screen visually) -->
+<div class="bg-white border-2 border-[#15803D] rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between">
+<div class="flex justify-between items-start"><span class="text-label-bold text-primary">B-09</span><div class="flex gap-0.5"><span class="material-symbols-outlined text-[14px] text-[#15803D]">battery_full</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">wifi</span></div></div>
+<div class="flex justify-center gap-1.5"><span class="material-symbols-outlined text-[14px] text-[#15803D]" style="font-variation-settings: 'FILL' 1;">videocam</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">person</span></div>
+<div class="text-center border-t border-slate-100 pt-1"><span class="font-h3 text-[14px] text-primary">540</span></div>
+</div>
+<div class="bg-white border-2 border-[#15803D] rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between">
+<div class="flex justify-between items-start"><span class="text-label-bold text-primary">B-10</span><div class="flex gap-0.5"><span class="material-symbols-outlined text-[14px] text-[#15803D]">battery_full</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">wifi</span></div></div>
+<div class="flex justify-center gap-1.5"><span class="material-symbols-outlined text-[14px] text-[#15803D]" style="font-variation-settings: 'FILL' 1;">videocam</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">person</span></div>
+<div class="text-center border-t border-slate-100 pt-1"><span class="font-h3 text-[14px] text-primary">921</span></div>
+</div>
+<div class="bg-white border-2 border-[#D97706] rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between">
+<div class="flex justify-between items-start"><span class="text-label-bold text-primary">B-11</span><div class="flex gap-0.5"><span class="material-symbols-outlined text-[14px] text-[#D97706]">battery_alert</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">wifi</span></div></div>
+<div class="flex justify-center gap-1.5"><span class="material-symbols-outlined text-[14px] text-[#15803D]" style="font-variation-settings: 'FILL' 1;">videocam</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">person</span></div>
+<div class="text-center border-t border-slate-100 pt-1"><span class="font-h3 text-[14px] text-primary">239</span></div>
+</div>
+<div class="bg-white border-2 border-[#15803D] rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between">
+<div class="flex justify-between items-start"><span class="text-label-bold text-primary">B-12</span><div class="flex gap-0.5"><span class="material-symbols-outlined text-[14px] text-[#15803D]">battery_full</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">wifi</span></div></div>
+<div class="flex justify-center gap-1.5"><span class="material-symbols-outlined text-[14px] text-[#15803D]" style="font-variation-settings: 'FILL' 1;">videocam</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">person</span></div>
+<div class="text-center border-t border-slate-100 pt-1"><span class="font-h3 text-[14px] text-primary">667</span></div>
+</div>
+<!-- Remaining grid simulated as healthy -->
+<div :key="i" class="bg-white border-2 border-[#15803D] rounded-lg p-3 w-[110px] h-[90px] flex flex-col justify-between opacity-40" v-for="i in 36">
+<div class="flex justify-between items-start"><span class="text-label-bold text-primary">B-13+</span><div class="flex gap-0.5"><span class="material-symbols-outlined text-[14px] text-[#15803D]">battery_full</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">wifi</span></div></div>
+<div class="flex justify-center gap-1.5"><span class="material-symbols-outlined text-[14px] text-[#15803D]" style="font-variation-settings: 'FILL' 1;">videocam</span><span class="material-symbols-outlined text-[14px] text-[#15803D]">person</span></div>
+<div class="text-center border-t border-slate-100 pt-1"><span class="font-h3 text-[14px] text-primary">...</span></div>
+</div>
+</div>
+<div class="mt-8 bg-white border border-slate-200 p-6 rounded-lg">
+<h3 class="font-h3 text-primary mb-4">Constituency Summary</h3>
+<div class="grid grid-cols-4 gap-6">
+<div class="p-4 bg-slate-50 rounded-md">
+<p class="text-label-bold text-on-surface-variant uppercase tracking-wider">Total Votes</p>
+<p class="text-h1 text-primary mt-1">32,492</p>
+<p class="text-body-sm text-green-600 mt-1 font-medium">↑ 12% vs last hour</p>
+</div>
+<div class="p-4 bg-slate-50 rounded-md">
+<p class="text-label-bold text-on-surface-variant uppercase tracking-wider">Healthy Booths</p>
+<p class="text-h1 text-[#15803D] mt-1">42 / 48</p>
+<div class="w-full bg-slate-200 h-1.5 rounded-full mt-2">
+<div class="bg-[#15803D] h-1.5 rounded-full" style="width: 87%"></div>
+</div>
+</div>
+<div class="p-4 bg-slate-50 rounded-md">
+<p class="text-label-bold text-on-surface-variant uppercase tracking-wider">Warning State</p>
+<p class="text-h1 text-[#D97706] mt-1">3</p>
+<p class="text-body-sm text-on-surface-variant mt-1">Mostly battery issues</p>
+</div>
+<div class="p-4 bg-red-50 border border-red-100 rounded-md">
+<p class="text-label-bold text-on-surface-variant uppercase tracking-wider">Critical Alerts</p>
+<p class="text-h1 text-[#B91C1C] mt-1">3</p>
+<p class="text-body-sm text-[#B91C1C] mt-1 font-bold underline cursor-pointer">View Details</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Alerts Sidebar (240px) -->
+<aside class="w-[240px] bg-white border-l border-slate-200 flex flex-col h-full sticky top-16">
+<div class="p-4 border-b border-slate-100 flex items-center justify-between">
+<h3 class="font-label-bold text-primary uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-red-600 text-lg">notifications_active</span>
+                        Alerts
+                    </h3>
+<span class="bg-red-100 text-[#B91C1C] text-[10px] font-bold px-1.5 rounded-full">3</span>
+</div>
+<div class="flex-1 overflow-y-auto">
+<!-- Alert Item 1 -->
+<div class="p-4 border-b border-slate-50 bg-red-50/30">
+<div class="flex justify-between items-start mb-1">
+<span class="text-label-bold text-[#B91C1C]">Booth #B-03</span>
+<span class="text-[10px] text-slate-500">12:04 PM</span>
+</div>
+<p class="text-body-sm text-primary font-bold">Network Offline</p>
+<p class="text-[11px] text-on-surface-variant leading-tight mt-1">Secondary router failed. Switch to manual backup initiated.</p>
+<button class="mt-3 w-full bg-[#1B3A6B] text-white py-1 rounded text-[11px] font-bold uppercase tracking-tighter hover:bg-[#2563EB]">Resolve</button>
+</div>
+<!-- Alert Item 2 -->
+<div class="p-4 border-b border-slate-50">
+<div class="flex justify-between items-start mb-1">
+<span class="text-label-bold text-[#B91C1C]">Booth #B-08</span>
+<span class="text-[10px] text-slate-500">12:15 PM</span>
+</div>
+<p class="text-body-sm text-primary font-bold">Camera Feed Lost</p>
+<p class="text-[11px] text-on-surface-variant leading-tight mt-1">CCTV-02 not transmitting data. Potential hardware glitch.</p>
+<button class="mt-3 w-full bg-[#1B3A6B] text-white py-1 rounded text-[11px] font-bold uppercase tracking-tighter hover:bg-[#2563EB]">Resolve</button>
+</div>
+<!-- Alert Item 3 -->
+<div class="p-4 border-b border-slate-50">
+<div class="flex justify-between items-start mb-1">
+<span class="text-label-bold text-[#D97706]">Booth #B-11</span>
+<span class="text-[10px] text-slate-500">12:22 PM</span>
+</div>
+<p class="text-body-sm text-primary font-bold">Low Battery</p>
+<p class="text-[11px] text-on-surface-variant leading-tight mt-1">UPS at 15%. Local power supply interrupted.</p>
+<button class="mt-3 w-full bg-white border border-slate-200 text-primary py-1 rounded text-[11px] font-bold uppercase tracking-tighter hover:bg-slate-50">Resolve</button>
+</div>
+<!-- Resolved Alert (History/Muted) -->
+<div class="p-4 opacity-50">
+<div class="flex justify-between items-start mb-1">
+<span class="text-label-bold text-slate-400">Booth #B-19</span>
+<span class="text-[10px] text-slate-400">11:45 AM</span>
+</div>
+<p class="text-body-sm text-slate-400 font-medium">Issue Resolved</p>
+<p class="text-[11px] text-slate-400 leading-tight mt-1">Crowd density reported high; extra officers deployed.</p>
+</div>
+</div>
+<div class="p-4 bg-slate-50 border-t border-slate-200">
+<button class="w-full text-center text-label-bold text-secondary uppercase hover:underline">View All Notifications</button>
+</div>
+</aside>
+</div>
+</main>
+</body></html>
