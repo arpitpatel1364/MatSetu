@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MatSetu — Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+:root {
+  --saffron:#E8751A; --saffron-dim:rgba(232,117,26,.10); --saffron-mid:rgba(232,117,26,.22);
+  --green:#1A9E4A; --green-dim:rgba(26,158,74,.10);
+  --bg:#070B12; --bg-raised:#0C1220; --surface:#101826;
+  --surface2:#18243A; --surface3:#1F2E48;
+  --border:#1E2D44; --border2:#263550;
+  --text:#ECF0FF; --text-sec:#7A8EAE; --text-dim:#3D4F6A;
+  --success:#1A9E4A; --success-dim:rgba(26,158,74,.10);
+  --error:#C93B3B; --error-dim:rgba(201,59,59,.10);
+  --warning:#C08A1A; --warning-dim:rgba(192,138,26,.10);
+  --info:#2563C4; --info-dim:rgba(37,99,196,.10);
+  --purple:#7C3AED; --purple-dim:rgba(124,58,237,.10);
+  --font:'DM Sans',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  --t:0.16s cubic-bezier(.4,0,.2,1); --r:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;overflow:hidden}
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(30,45,68,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(30,45,68,.35) 1px,transparent 1px);
+  background-size:28px 28px}
+
+/* ── Login ──────────────────────────────────────────────────────── */
+.login-wrap{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 40%,rgba(232,117,26,.06),transparent 60%),var(--bg)}
+.login-card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:40px;width:420px;box-shadow:0 24px 64px rgba(0,0,0,.7)}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.brand-mark{width:40px;height:40px;background:linear-gradient(135deg,var(--saffron),#b05a10);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.login-title{font-size:20px;font-weight:700;letter-spacing:-.3px}
+.login-sub{font-size:11px;color:var(--text-sec);letter-spacing:.5px}
+.auth-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}
+.chip{padding:3px 10px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.4px;
+  background:var(--surface2);border:1px solid var(--border);color:var(--text-sec);
+  display:flex;align-items:center;gap:4px}
+.chip svg{flex-shrink:0}
+
+/* ── App shell ───────────────────────────────────────────────────── */
+.app{display:none;flex-direction:column;height:100vh}
+.app.visible{display:flex}
+
+/* ── Topbar ──────────────────────────────────────────────────────── */
+.topbar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0;flex-shrink:0;position:relative;z-index:10}
+.topbar-brand{display:flex;align-items:center;gap:10px;padding:0 20px;height:100%;
+  border-right:1px solid var(--border);min-width:230px}
+.t-mark{width:28px;height:28px;background:linear-gradient(135deg,var(--saffron),#b05a10);
+  border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.t-name{font-size:14px;font-weight:700}
+.t-role{padding:2px 8px;background:var(--saffron-dim);border:1px solid var(--saffron-mid);
+  border-radius:4px;font-size:10px;font-weight:700;color:var(--saffron);letter-spacing:.5px;
+  margin-left:8px}
+.topbar-nav{display:flex;align-items:center;height:100%;padding:0 8px;gap:2px}
+.nav-btn{display:flex;align-items:center;gap:6px;padding:0 14px;height:36px;border-radius:7px;
+  font-size:13px;font-weight:500;color:var(--text-sec);cursor:pointer;
+  transition:all var(--t);border:none;background:transparent;white-space:nowrap;
+  position:relative}
+.nav-btn:hover{background:var(--surface2);color:var(--text)}
+.nav-btn.active{background:var(--surface2);color:var(--text);font-weight:600}
+.nav-btn.active::after{content:'';position:absolute;bottom:-1px;left:12px;right:12px;
+  height:2px;background:var(--saffron);border-radius:2px}
+.nav-badge{background:var(--error);color:#fff;width:17px;height:17px;border-radius:50%;
+  font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--mono)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:0;height:100%}
+.tb-meta{padding:0 16px;height:100%;border-left:1px solid var(--border);
+  display:flex;flex-direction:column;justify-content:center}
+.tb-meta .m-label{font-size:10px;color:var(--text-dim);letter-spacing:.6px;text-transform:uppercase}
+.tb-meta .m-val{font-size:12px;font-weight:600;color:var(--text)}
+.tb-clock{padding:0 16px;height:100%;border-left:1px solid var(--border);
+  display:flex;align-items:center;font-family:var(--mono);font-size:14px;font-weight:500;color:var(--saffron)}
+.tb-logout{padding:0 16px;height:100%;border-left:1px solid var(--border);
+  display:flex;align-items:center;cursor:pointer;color:var(--text-sec);
+  transition:all var(--t);gap:6px;font-size:13px}
+.tb-logout:hover{background:var(--error-dim);color:var(--error)}
+
+/* ── Body layout ─────────────────────────────────────────────────── */
+.body-wrap{display:flex;flex:1;overflow:hidden;position:relative;z-index:1}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.sidebar-inner{flex:1;overflow-y:auto;padding:12px 0}
+.sidebar-group-label{padding:12px 16px 4px;font-size:10px;letter-spacing:1px;
+  text-transform:uppercase;color:var(--text-dim);font-weight:600}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:9px 16px;
+  cursor:pointer;font-size:13px;color:var(--text-sec);
+  border-left:2px solid transparent;transition:all var(--t)}
+.sidebar-item:hover{background:rgba(255,255,255,.02);color:var(--text)}
+.sidebar-item.active{background:var(--saffron-dim);color:var(--saffron);
+  border-left-color:var(--saffron);font-weight:500}
+.sidebar-item svg{flex-shrink:0;opacity:.7}
+.sidebar-item.active svg{opacity:1}
+.sidebar-footer{padding:14px 16px;border-top:1px solid var(--border)}
+.sf-status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-sec)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--success);
+  box-shadow:0 0 0 2px rgba(26,158,74,.15);animation:pdot 2.5s infinite;flex-shrink:0}
+@keyframes pdot{0%,100%{box-shadow:0 0 0 2px rgba(26,158,74,.15)}50%{box-shadow:0 0 0 4px rgba(26,158,74,.05)}}
+
+/* ── Main ────────────────────────────────────────────────────────── */
+.main{flex:1;overflow-y:auto;padding:24px;background:var(--bg-raised)}
+.page{display:none}.page.active{display:block}
+
+/* ── Page header ─────────────────────────────────────────────────── */
+.ph{display:flex;align-items:flex-start;gap:14px;margin-bottom:24px;
+  padding-bottom:20px;border-bottom:1px solid var(--border)}
+.ph-icon{width:40px;height:40px;border-radius:10px;flex-shrink:0;
+  background:var(--saffron-dim);border:1px solid var(--saffron-mid);
+  display:flex;align-items:center;justify-content:center;color:var(--saffron)}
+.ph h2{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.ph p{font-size:12px;color:var(--text-sec);margin-top:2px}
+.ph-actions{margin-left:auto;display:flex;gap:8px;align-items:flex-start}
+
+/* ── Stat grid ───────────────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:18px 20px;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc-orange::after{background:linear-gradient(90deg,var(--saffron),transparent)}
+.sc-green::after{background:linear-gradient(90deg,var(--success),transparent)}
+.sc-red::after{background:linear-gradient(90deg,var(--error),transparent)}
+.sc-blue::after{background:linear-gradient(90deg,var(--info),transparent)}
+.sc-purple::after{background:linear-gradient(90deg,var(--purple),transparent)}
+.sc-label{font-size:11px;color:var(--text-sec);text-transform:uppercase;
+  letter-spacing:.7px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.sc-label svg{color:var(--text-dim)}
+.sc-value{font-size:30px;font-weight:800;font-family:var(--mono);letter-spacing:-1px}
+.sc-orange .sc-value{color:var(--saffron)}
+.sc-green .sc-value{color:var(--success)}
+.sc-red .sc-value{color:var(--error)}
+.sc-blue .sc-value{color:var(--info)}
+.sc-purple .sc-value{color:var(--purple)}
+.sc-sub{font-size:11px;color:var(--text-dim);margin-top:6px}
+.progress-bar{height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--saffron),var(--green));transition:width 1s ease;border-radius:2px}
+
+/* ── Cards ───────────────────────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:20px;margin-bottom:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.card-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text)}
+.card-title svg{color:var(--text-sec)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+/* ── Forms ───────────────────────────────────────────────────────── */
+.fg{margin-bottom:14px}
+label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.7px;color:var(--text-sec);margin-bottom:5px}
+.input-wrap{position:relative}
+.input-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);
+  color:var(--text-dim);pointer-events:none;display:flex}
+input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;
+  outline:none;transition:border-color var(--t),box-shadow var(--t)}
+input,select{padding:9px 12px 9px 36px}
+input.bare,select{padding-left:12px}
+textarea{padding:10px 12px;resize:vertical;min-height:80px}
+input:focus,select:focus,textarea:focus{border-color:var(--saffron);box-shadow:0 0 0 3px var(--saffron-dim)}
+input::placeholder{color:var(--text-dim)}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:9px 18px;border:none;border-radius:8px;font-family:var(--font);
+  font-size:13px;font-weight:600;cursor:pointer;transition:all var(--t);white-space:nowrap}
+.btn svg{flex-shrink:0}
+.btn-primary{background:var(--saffron);color:#fff;box-shadow:0 2px 8px rgba(232,117,26,.3)}
+.btn-primary:hover{background:#d0680f}
+.btn-success{background:var(--success);color:#fff;box-shadow:0 2px 8px rgba(26,158,74,.3)}
+.btn-success:hover{background:#148040}
+.btn-danger{background:var(--error);color:#fff;box-shadow:0 2px 8px rgba(201,59,59,.3)}
+.btn-danger:hover{background:#b52e2e}
+.btn-ghost{background:transparent;color:var(--text-sec);border:1px solid var(--border2)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-full{width:100%}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── Alerts ──────────────────────────────────────────────────────── */
+.alert{display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:8px;
+  font-size:12px;margin-bottom:12px;border:1px solid transparent;line-height:1.5}
+.alert svg{flex-shrink:0;margin-top:1px}
+.alert-error{background:var(--error-dim);border-color:rgba(201,59,59,.2);color:#e07070}
+.alert-success{background:var(--success-dim);border-color:rgba(26,158,74,.2);color:#5abf7a}
+.alert-warning{background:var(--warning-dim);border-color:rgba(192,138,26,.2);color:#d4a44a}
+.alert-info{background:var(--info-dim);border-color:rgba(37,99,196,.2);color:#7aabf0}
+.alert.hidden{display:none}
+
+/* ── Table ───────────────────────────────────────────────────────── */
+.tbl-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tbl-toolbar{display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface)}
+.tbl-toolbar .tt-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.tbl-toolbar .tt-actions{display:flex;gap:8px}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--surface2);padding:10px 14px;text-align:left;
+  font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.8px;font-weight:600;
+  border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:11px 14px;border-top:1px solid var(--border);font-size:13px;vertical-align:middle}
+tbody tr:hover td{background:rgba(255,255,255,.015)}
+.td-mono{font-family:var(--mono);font-size:11px;color:var(--text-sec)}
+.td-code{font-family:var(--mono);font-size:11px;background:var(--surface2);
+  padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--text-sec)}
+
+/* ── Badges / chips ──────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;
+  font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.b-orange{background:var(--saffron-dim);color:var(--saffron);border:1px solid rgba(232,117,26,.2)}
+.b-green{background:var(--success-dim);color:var(--success);border:1px solid rgba(26,158,74,.2)}
+.b-red{background:var(--error-dim);color:var(--error);border:1px solid rgba(201,59,59,.2)}
+.b-blue{background:var(--info-dim);color:var(--info);border:1px solid rgba(37,99,196,.2)}
+.b-purple{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(124,58,237,.2)}
+.b-gray{background:var(--surface2);color:var(--text-sec);border:1px solid var(--border)}
+
+/* ── Tally bars ──────────────────────────────────────────────────── */
+.tally-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.tally-label{width:150px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+.tally-track{flex:1;height:20px;background:var(--surface2);border-radius:5px;overflow:hidden;border:1px solid var(--border)}
+.tally-fill{height:100%;background:linear-gradient(90deg,var(--saffron),var(--green));
+  border-radius:5px;display:flex;align-items:center;padding:0 8px;
+  font-size:11px;font-weight:700;color:#fff;min-width:2px;transition:width .8s ease}
+.tally-count{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--saffron);width:60px;text-align:right}
+
+/* ── Election control panel ──────────────────────────────────────── */
+.control-panel{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cp-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+.cp-card.cp-start{border-color:rgba(26,158,74,.2)}
+.cp-card.cp-stop{border-color:rgba(201,59,59,.2)}
+.cp-title{font-size:15px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.cp-desc{font-size:12px;color:var(--text-sec);margin-bottom:16px;line-height:1.6}
+
+/* ── Anomaly flags ───────────────────────────────────────────────── */
+.flag-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:4px;
+  font-size:10px;font-weight:700;letter-spacing:.3px}
+.f-gps{background:rgba(192,138,26,.15);color:var(--warning)}
+.f-face{background:var(--purple-dim);color:var(--purple)}
+.f-dup{background:var(--error-dim);color:var(--error)}
+.f-live{background:var(--error-dim);color:var(--error)}
+.f-turnout{background:var(--info-dim);color:var(--info)}
+.f-offline{background:var(--success-dim);color:var(--success)}
+
+/* ── Uncontested badge ───────────────────────────────────────────── */
+.unc-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:4px;
+  background:var(--purple-dim);border:1px solid rgba(124,58,237,.25);
+  color:var(--purple);font-size:11px;font-weight:700;letter-spacing:.3px}
+
+/* ── Override modal ──────────────────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  z-index:200;display:flex;align-items:center;justify-content:center}
+.modal-bg.hidden{display:none}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;
+  padding:28px;width:480px;max-height:80vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.8)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.modal-close{width:28px;height:28px;border-radius:6px;background:var(--surface2);
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text-sec);transition:all var(--t)}
+.modal-close:hover{background:var(--error-dim);color:var(--error)}
+
+/* ── Misc ────────────────────────────────────────────────────────── */
+.hidden{display:none!important}
+.sep{height:1px;background:var(--border);margin:16px 0}
+.loading-state{display:flex;align-items:center;gap:10px;padding:24px;color:var(--text-sec);font-size:13px}
+.spinner{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--saffron);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-sec)}
+.empty-state svg{margin-bottom:12px;opacity:.4}
+.empty-state p{font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="brand-mark"><i data-lucide="landmark" style="width:18px;height:18px;"></i></div>
+      <div>
+        <div class="login-title">MatSetu Admin</div>
+        <div class="login-sub">Election Management Platform</div>
+      </div>
+    </div>
+    <div class="auth-chips">
+      <span class="chip"><i data-lucide="lock" style="width:10px;height:10px;"></i> bcrypt</span>
+      <span class="chip"><i data-lucide="shield" style="width:10px;height:10px;"></i> TOTP 2FA</span>
+      <span class="chip"><i data-lucide="globe" style="width:10px;height:10px;"></i> IP Allowlist</span>
+      <span class="chip"><i data-lucide="link" style="width:10px;height:10px;"></i> RLS Scoped</span>
+    </div>
+    <div id="loginAlert" class="hidden"></div>
+    <div class="fg">
+      <label>Username</label>
+      <div class="input-wrap">
+        <div class="input-icon"><i data-lucide="user" style="width:13px;height:13px;"></i></div>
+        <input type="text" id="loginUser" placeholder="admin_username">
+      </div>
+    </div>
+    <div class="fg">
+      <label>Password</label>
+      <div class="input-wrap">
+        <div class="input-icon"><i data-lucide="key" style="width:13px;height:13px;"></i></div>
+        <input type="password" id="loginPass" placeholder="••••••••••••">
+      </div>
+    </div>
+    <div class="fg">
+      <label>TOTP Code</label>
+      <div class="input-wrap">
+        <div class="input-icon"><i data-lucide="smartphone" style="width:13px;height:13px;"></i></div>
+        <input type="tel" id="loginTOTP" maxlength="6" placeholder="000000"
+          style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:20px;letter-spacing:8px;">
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" style="padding:12px;" onclick="doLogin()">
+      <i data-lucide="log-in" style="width:15px;height:15px;"></i> Sign In Securely
+    </button>
+  </div>
+</div>
+
+<!-- App -->
+<div class="app" id="mainApp">
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="t-mark"><i data-lucide="landmark" style="width:14px;height:14px;"></i></div>
+      <span class="t-name">MatSetu</span>
+      <span class="t-role" id="roleBadge">—</span>
+    </div>
+    <nav class="topbar-nav">
+      <button class="nav-btn active" onclick="showPage('dashboard',this)">
+        <i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i> Dashboard
+      </button>
+      <button class="nav-btn" onclick="showPage('election',this)">
+        <i data-lucide="vote" style="width:14px;height:14px;"></i> Election
+      </button>
+      <button class="nav-btn" onclick="showPage('anomalies',this)">
+        <i data-lucide="triangle-alert" style="width:14px;height:14px;"></i> Anomalies
+        <span class="nav-badge" id="anomalyCount">0</span>
+      </button>
+      <button class="nav-btn" onclick="showPage('tally',this)">
+        <i data-lucide="bar-chart-3" style="width:14px;height:14px;"></i> Live Tally
+      </button>
+      <button class="nav-btn" onclick="showPage('uncontested',this)">
+        <i data-lucide="award" style="width:14px;height:14px;"></i> Uncontested
+      </button>
+      <button class="nav-btn" onclick="showPage('audit',this)">
+        <i data-lucide="scroll-text" style="width:14px;height:14px;"></i> Audit Log
+      </button>
+    </nav>
+    <div class="topbar-right">
+      <div class="tb-meta">
+        <span class="m-label">Scope</span>
+        <span class="m-val" id="scopeLabel">—</span>
+      </div>
+      <div class="tb-clock" id="tbClock">00:00:00</div>
+      <div class="tb-logout" onclick="doLogout()">
+        <i data-lucide="log-out" style="width:14px;height:14px;"></i> Logout
+      </div>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <div class="body-wrap">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-group-label">Overview</div>
+        <div class="sidebar-item active" onclick="showPage('dashboard',null,this)">
+          <i data-lucide="layout-dashboard" style="width:15px;height:15px;"></i> Dashboard
+        </div>
+        <div class="sidebar-group-label">Election</div>
+        <div class="sidebar-item" onclick="showPage('election',null,this)">
+          <i data-lucide="vote" style="width:15px;height:15px;"></i> Election Control
+        </div>
+        <div class="sidebar-item" onclick="showPage('uncontested',null,this)">
+          <i data-lucide="award" style="width:15px;height:15px;"></i> Uncontested Seats
+        </div>
+        <div class="sidebar-item" onclick="showPage('tally',null,this)">
+          <i data-lucide="bar-chart-3" style="width:15px;height:15px;"></i> Live Tally
+        </div>
+        <div class="sidebar-group-label">Monitoring</div>
+        <div class="sidebar-item" onclick="showPage('anomalies',null,this)">
+          <i data-lucide="triangle-alert" style="width:15px;height:15px;"></i> Anomalies
+        </div>
+        <div class="sidebar-item" onclick="showPage('audit',null,this)">
+          <i data-lucide="scroll-text" style="width:15px;height:15px;"></i> Audit Log
+        </div>
+        <div class="sidebar-group-label">Management</div>
+        <div class="sidebar-item" onclick="showPage('booths',null,this)">
+          <i data-lucide="building-2" style="width:15px;height:15px;"></i> Booths
+        </div>
+        <div class="sidebar-item" onclick="showPage('workers',null,this)">
+          <i data-lucide="users" style="width:15px;height:15px;"></i> Workers
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="sf-status">
+          <div class="status-dot"></div>
+          <span>System operational</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">MatSetu v1.0 · ECI</div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+      <!-- Dashboard -->
+      <div class="page active" id="page-dashboard">
+        <div class="ph">
+          <div class="ph-icon"><i data-lucide="layout-dashboard" style="width:20px;height:20px;"></i></div>
+          <div>
+            <h2>Election Dashboard</h2>
+            <p>Live statistics — auto-refreshes via SSE every 5 seconds</p>
+          </div>
+          <div class="ph-actions">
+            <button class="btn btn-ghost btn-sm" onclick="loadDashboard()">
+              <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card sc-orange">
+            <div class="sc-label"><i data-lucide="users" style="width:12px;height:12px;"></i> Registered Voters</div>
+            <div class="sc-value" id="dTotalVoters">—</div>
+            <div class="sc-sub">Electoral roll</div>
+          </div>
+          <div class="stat-card sc-green">
+            <div class="sc-label"><i data-lucide="check-circle" style="width:12px;height:12px;"></i> Votes Cast</div>
+            <div class="sc-value" id="dVotesCast">—</div>
+            <div class="progress-bar"><div class="progress-fill" id="turnoutBar" style="width:0%"></div></div>
+            <div class="sc-sub" id="dTurnout">0.00% turnout</div>
+          </div>
+          <div class="stat-card sc-blue">
+            <div class="sc-label"><i data-lucide="building-2" style="width:12px;height:12px;"></i> Active Booths</div>
+            <div class="sc-value" id="dActiveBooths">—</div>
+            <div class="sc-sub" id="dTotalBooths">of — total</div>
+          </div>
+          <div class="stat-card sc-red">
+            <div class="sc-label"><i data-lucide="triangle-alert" style="width:12px;height:12px;"></i> Open Anomalies</div>
+            <div class="sc-value" id="dAnomalies">—</div>
+            <div class="sc-sub">Unresolved flags</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i data-lucide="activity" style="width:15px;height:15px;"></i> SSE Live Feed
+              </div>
+              <span class="badge b-green" id="sseStatusBadge">Connecting</span>
+            </div>
+            <div id="sseLog" style="font-family:var(--mono);font-size:11px;color:var(--text-sec);height:160px;overflow-y:auto;line-height:1.8;"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i data-lucide="award" style="width:15px;height:15px;"></i> Uncontested Seats
+              </div>
+              <span class="badge b-purple" id="dUncBadge">0</span>
+            </div>
+            <div id="dUncPreview" style="font-size:12px;color:var(--text-sec);">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Election Control -->
+      <div class="page" id="page-election">
+        <div class="ph">
+          <div class="ph-icon"><i data-lucide="vote" style="width:20px;height:20px;"></i></div>
+          <div><h2>Election Control</h2><p>SEC-9: All actions require TOTP re-confirmation</p></div>
+        </div>
+        <div id="elAlert" class="hidden"></div>
+        <div class="control-panel">
+          <div class="cp-card cp-start">
+            <div class="cp-title" style="color:var(--success);">
+              <i data-lucide="play-circle" style="width:18px;height:18px;"></i> Start Election
+            </div>
+            <div class="cp-desc">Opens all PENDING constituencies for voting. Activates eligible booths. Cannot be undone without a stop action.</div>
+            <div class="fg">
+              <label>TOTP Code (SEC-9 required)</label>
+              <div class="input-wrap">
+                <div class="input-icon"><i data-lucide="shield-check" style="width:13px;height:13px;"></i></div>
+                <input type="tel" id="startTOTP" maxlength="6" placeholder="6-digit code" style="font-family:var(--mono);letter-spacing:4px;">
+              </div>
+            </div>
+            <button class="btn btn-success btn-full" onclick="startElection()">
+              <i data-lucide="play" style="width:15px;height:15px;"></i> Start Election
+            </button>
+          </div>
+          <div class="cp-card cp-stop">
+            <div class="cp-title" style="color:var(--error);">
+              <i data-lucide="stop-circle" style="width:18px;height:18px;"></i> Stop Election
+            </div>
+            <div class="cp-desc">Closes all OPEN constituencies. Deactivates all active booths. Records timestamp in audit log. Requires TOTP confirmation.</div>
+            <div class="fg">
+              <label>TOTP Code (SEC-9 required)</label>
+              <div class="input-wrap">
+                <div class="input-icon"><i data-lucide="shield-check" style="width:13px;height:13px;"></i></div>
+                <input type="tel" id="stopTOTP" maxlength="6" placeholder="6-digit code" style="font-family:var(--mono);letter-spacing:4px;">
+              </div>
+            </div>
+            <button class="btn btn-danger btn-full" onclick="stopElection()">
+              <i data-lucide="square" style="width:15px;height:15px;"></i> Stop Election
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Anomalies -->
+      <div class="page" id="page-anomalies">
+        <div class="ph">
+          <div class="ph-icon" style="background:var(--error-dim);border-color:rgba(201,59,59,.2);color:var(--error);">
+            <i data-lucide="triangle-alert" style="width:20px;height:20px;"></i>
+          </div>
+          <div><h2>Anomaly Events</h2><p>SEC-8: Manual overrides require TOTP and are recorded in audit log</p></div>
+          <div class="ph-actions">
+            <button class="btn btn-ghost btn-sm" onclick="loadAnomalies()">
+              <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> Refresh
+            </button>
+          </div>
+        </div>
+        <div id="anomalyContent"><div class="loading-state"><div class="spinner"></div> Loading anomaly events…</div></div>
+      </div>
+
+      <!-- Live Tally -->
+      <div class="page" id="page-tally">
+        <div class="ph">
+          <div class="ph-icon"><i data-lucide="bar-chart-3" style="width:20px;height:20px;"></i></div>
+          <div><h2>Live Tally</h2><p>Real-time vote counts from Redis — scoped by your admin level</p></div>
+        </div>
+        <div class="card">
+          <div class="two-col" style="margin-bottom:14px;">
+            <div class="fg" style="margin:0;">
+              <label>Geographic Level</label>
+              <select id="tallyLevel" class="bare" onchange="loadTally()">
+                <option value="country">Country</option>
+                <option value="state">State</option>
+                <option value="division">Division</option>
+                <option value="district">District</option>
+                <option value="taluka">Taluka</option>
+                <option value="block">Block</option>
+                <option value="booth">Booth</option>
+              </select>
+            </div>
+            <div class="fg" style="margin:0;">
+              <label>Location ID (UUID)</label>
+              <input type="text" id="tallyId" class="bare" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="loadTally()">
+            <i data-lucide="search" style="width:13px;height:13px;"></i> Fetch Tally
+          </button>
+        </div>
+        <div id="tallyContent" class="card"><div class="empty-state">
+          <i data-lucide="bar-chart-3" style="width:32px;height:32px;display:block;margin:0 auto 8px;opacity:.3;"></i>
+          <p>Select a level and location ID above to view live tally data</p>
+        </div></div>
+      </div>
+
+      <!-- Uncontested -->
+      <div class="page" id="page-uncontested">
+        <div class="ph">
+          <div class="ph-icon" style="background:var(--purple-dim);border-color:rgba(124,58,237,.2);color:var(--purple);">
+            <i data-lucide="award" style="width:20px;height:20px;"></i>
+          </div>
+          <div><h2>Uncontested Constituencies</h2><p>R3: No voting, no booths activated. R4: Badge only, no vote count shown.</p></div>
+          <div class="ph-actions">
+            <button class="btn btn-ghost btn-sm" onclick="loadUncontested()">
+              <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> Refresh
+            </button>
+          </div>
+        </div>
+        <div class="alert alert-info">
+          <i data-lucide="info" style="width:14px;height:14px;"></i>
+          <span>R6: Uncontested declaration only permitted after nomination deadline passes. R7: Reversible before national polls open.</span>
+        </div>
+        <div id="uncontestedContent"><div class="loading-state"><div class="spinner"></div> Loading…</div></div>
+      </div>
+
+      <!-- Audit Log -->
+      <div class="page" id="page-audit">
+        <div class="ph">
+          <div class="ph-icon"><i data-lucide="scroll-text" style="width:20px;height:20px;"></i></div>
+          <div><h2>Audit Log</h2><p>SEC-10: Read-only access. Immutable record of all system actions.</p></div>
+        </div>
+        <div class="card" style="padding:14px;">
+          <div style="display:flex;gap:10px;align-items:center;">
+            <i data-lucide="filter" style="width:14px;height:14px;color:var(--text-dim);flex-shrink:0;"></i>
+            <select id="auditFilter" class="bare" style="width:220px;" onchange="loadAudit()">
+              <option value="">All Actions</option>
+              <option>VOTER_SCAN</option><option>OTP_SENT</option><option>VOTE_CAST</option>
+              <option>ANOMALY_FLAG</option><option>ANOMALY_OVERRIDE</option>
+              <option>OTP_PRINT_FALLBACK</option><option>UNCONTESTED_DECLARED</option>
+              <option>UNCONTESTED_REVERSED</option><option>ELECTION_STARTED</option>
+              <option>ELECTION_STOPPED</option><option>WORKER_LOGIN</option><option>ADMIN_LOGIN</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="loadAudit()">
+              <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> Refresh
+            </button>
+          </div>
+        </div>
+        <div id="auditContent"><div class="loading-state"><div class="spinner"></div> Loading audit log…</div></div>
+      </div>
+
+      <!-- Booths -->
+      <div class="page" id="page-booths">
+        <div class="ph">
+          <div class="ph-icon"><i data-lucide="building-2" style="width:20px;height:20px;"></i></div>
+          <div><h2>Booth Management</h2><p>Activate, deactivate and monitor polling booths</p></div>
+        </div>
+        <div class="empty-state" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:48px;">
+          <i data-lucide="building-2" style="width:40px;height:40px;display:block;margin:0 auto 12px;opacity:.3;"></i>
+          <p>Booth registry — connect to backend to load booth data</p>
+        </div>
+      </div>
+
+      <!-- Workers -->
+      <div class="page" id="page-workers">
+        <div class="ph">
+          <div class="ph-icon"><i data-lucide="users" style="width:20px;height:20px;"></i></div>
+          <div><h2>Worker Management</h2><p>Polling officers, shifts and re-authentication status</p></div>
+        </div>
+        <div class="empty-state" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:48px;">
+          <i data-lucide="users" style="width:40px;height:40px;display:block;margin:0 auto 12px;opacity:.3;"></i>
+          <p>Worker registry — connect to backend to load worker data</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Override Modal -->
+<div class="modal-bg hidden" id="overrideModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i data-lucide="shield-alert" style="width:16px;height:16px;color:var(--warning);"></i>
+        Override Anomaly (SEC-8)
+      </div>
+      <div class="modal-close" onclick="document.getElementById('overrideModal').classList.add('hidden')">
+        <i data-lucide="x" style="width:14px;height:14px;"></i>
+      </div>
+    </div>
+    <div class="alert alert-warning">
+      <i data-lucide="alert-triangle" style="width:14px;height:14px;"></i>
+      <span>This action will be permanently recorded in the immutable audit log with your identity and TOTP confirmation.</span>
+    </div>
+    <div class="fg">
+      <label>Override Reason</label>
+      <textarea id="overrideReason" placeholder="Provide a detailed justification for overriding this anomaly event…"></textarea>
+    </div>
+    <div class="fg">
+      <label>TOTP Confirmation (SEC-8)</label>
+      <div class="input-wrap">
+        <div class="input-icon"><i data-lucide="shield" style="width:13px;height:13px;"></i></div>
+        <input type="tel" id="overrideTOTP" maxlength="6" placeholder="6-digit code" style="font-family:var(--mono);letter-spacing:4px;">
+      </div>
+    </div>
+    <input type="hidden" id="overrideId">
+    <button class="btn btn-danger btn-full" onclick="submitOverride()">
+      <i data-lucide="check-circle" style="width:15px;height:15px;"></i> Confirm Override
+    </button>
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+const API = '';
+let adminToken = localStorage.getItem('adminToken') || '';
+let sseConn = null;
+
+setInterval(() => {
+  const el = document.getElementById('tbClock');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}, 1000);
+
+// ── API ────────────────────────────────────────────────────────────
+async function api(path, method='GET', body=null) {
+  const opts = {method, headers:{'Content-Type':'application/json','Authorization':`Bearer ${adminToken}`}};
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.detail || 'API error');
+  return d;
+}
+
+// ── Auth ───────────────────────────────────────────────────────────
+async function doLogin() {
+  try {
+    const d = await api('/api/v1/auth/admin/login', 'POST', {
+      username: document.getElementById('loginUser').value,
+      password: document.getElementById('loginPass').value,
+      totp_code: document.getElementById('loginTOTP').value
+    });
+    adminToken = d.access_token;
+    localStorage.setItem('adminToken', adminToken);
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('mainApp').classList.add('visible');
+    document.getElementById('roleBadge').textContent = d.role;
+    document.getElementById('scopeLabel').textContent = d.scope_type;
+    loadDashboard(); startSSE();
+  } catch(e) { showAlert('loginAlert', e.message); }
+}
+function doLogout() { localStorage.removeItem('adminToken'); location.reload(); }
+
+// ── Navigation ─────────────────────────────────────────────────────
+function showPage(name, navEl, sideEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name)?.classList.add('active');
+  if (navEl) { document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); navEl.classList.add('active'); }
+  if (sideEl) { document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active')); sideEl.classList.add('active'); }
+  const loaders = {anomalies:loadAnomalies, uncontested:loadUncontested, audit:loadAudit};
+  loaders[name]?.();
+}
+
+// ── SSE ────────────────────────────────────────────────────────────
+function startSSE() {
+  if (sseConn) sseConn.close();
+  sseConn = new EventSource('/api/v1/sse/tally/national');
+  const log = document.getElementById('sseLog');
+  const badge = document.getElementById('sseStatusBadge');
+  sseConn.onopen = () => { badge.className = 'badge b-green'; badge.textContent = 'Connected'; };
+  sseConn.onerror = () => { badge.className = 'badge b-red'; badge.textContent = 'Disconnected'; };
+  sseConn.onmessage = e => {
+    const d = JSON.parse(e.data);
+    if (d.event === 'tally_update') {
+      document.getElementById('dTotalVoters').textContent = d.total_voters?.toLocaleString('en-IN') || '—';
+      document.getElementById('dVotesCast').textContent = d.total_voted?.toLocaleString('en-IN') || '—';
+      document.getElementById('dTurnout').textContent = d.turnout_percent + '% turnout';
+      document.getElementById('turnoutBar').style.width = Math.min(d.turnout_percent, 100) + '%';
+      document.getElementById('dActiveBooths').textContent = d.active_booths?.toLocaleString('en-IN') || '—';
+      document.getElementById('dAnomalies').textContent = d.anomaly_count || '0';
+      document.getElementById('anomalyCount').textContent = d.anomaly_count || '0';
+      if (log) { const t = new Date().toLocaleTimeString('en-IN',{hour12:false}); log.innerHTML = `<div>${t} — turnout: ${d.turnout_percent}% · anomalies: ${d.anomaly_count}</div>` + log.innerHTML; if (log.children.length > 20) log.removeChild(log.lastChild); }
+    }
+  };
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const d = await api('/api/v1/admin/dashboard');
+    document.getElementById('dTotalVoters').textContent = d.total_voters.toLocaleString('en-IN');
+    document.getElementById('dVotesCast').textContent = d.total_voted.toLocaleString('en-IN');
+    document.getElementById('dTurnout').textContent = d.turnout_percent + '% turnout';
+    document.getElementById('turnoutBar').style.width = Math.min(d.turnout_percent, 100) + '%';
+    document.getElementById('dActiveBooths').textContent = d.active_booths.toLocaleString('en-IN');
+    document.getElementById('dTotalBooths').textContent = `of ${d.total_booths.toLocaleString('en-IN')} total`;
+    document.getElementById('dAnomalies').textContent = d.anomaly_count;
+    document.getElementById('anomalyCount').textContent = d.anomaly_count;
+    document.getElementById('dUncBadge').textContent = d.uncontested_count;
+    document.getElementById('dUncPreview').textContent = `${d.uncontested_count} constituency/constituencies declared uncontested`;
+  } catch(e) { console.error(e); }
+}
+
+// ── Election ───────────────────────────────────────────────────────
+async function startElection() {
+  try {
+    const r = await api('/api/v1/admin/election/start','POST',{totp_code:document.getElementById('startTOTP').value});
+    showAlert('elAlert', r.message, 'success');
+  } catch(e) { showAlert('elAlert', e.message, 'error'); }
+}
+async function stopElection() {
+  if (!confirm('Stop the election? This closes all open constituencies and deactivates all booths.')) return;
+  try {
+    const r = await api('/api/v1/admin/election/stop','POST',{totp_code:document.getElementById('stopTOTP').value});
+    showAlert('elAlert', r.message, 'success');
+  } catch(e) { showAlert('elAlert', e.message, 'error'); }
+}
+
+// ── Anomalies ──────────────────────────────────────────────────────
+async function loadAnomalies() {
+  document.getElementById('anomalyContent').innerHTML = '<div class="loading-state"><div class="spinner"></div> Loading…</div>';
+  try {
+    const data = await api('/api/v1/admin/anomalies?limit=100');
+    if (!data.length) {
+      document.getElementById('anomalyContent').innerHTML = `<div class="empty-state" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px;"><i data-lucide="check-circle" style="width:36px;height:36px;display:block;margin:0 auto 10px;color:var(--success);opacity:.6;"></i><p style="color:var(--success);">No unresolved anomaly events</p></div>`;
+      lucide.createIcons(); return;
+    }
+    const flagClass = f => f.includes('GPS')||f.includes('MOVE')?'f-gps':f.includes('FACE')||f.includes('DRIFT')?'f-face':f.includes('DUP')?'f-dup':f.includes('LIVE')?'f-live':f.includes('TURN')?'f-turnout':'f-offline';
+    document.getElementById('anomalyContent').innerHTML = `
+      <div class="tbl-wrap">
+        <div class="tbl-toolbar"><div class="tt-title"><i data-lucide="triangle-alert" style="width:14px;height:14px;color:var(--error);"></i> ${data.length} Open Flag${data.length!==1?'s':''}</div><div class="tt-actions"><button class="btn btn-ghost btn-sm" onclick="loadAnomalies()"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Refresh</button></div></div>
+        <table>
+          <thead><tr><th>Flag Type</th><th>Booth ID</th><th>Details</th><th>Detected</th><th>Action</th></tr></thead>
+          <tbody>${data.map(a=>`<tr>
+            <td><span class="flag-chip ${flagClass(a.flag_type)}">${a.flag_type.replace('FLAG_','')}</span></td>
+            <td class="td-mono">${a.booth_id?.slice(-12)||'—'}</td>
+            <td style="font-size:11px;color:var(--text-sec);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${JSON.stringify(a.details)}</td>
+            <td class="td-mono">${new Date(a.created_at).toLocaleString('en-IN')}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="openOverride('${a.id}')"><i data-lucide="shield-alert" style="width:12px;height:12px;"></i> Override</button></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+    lucide.createIcons();
+  } catch(e) { document.getElementById('anomalyContent').innerHTML = `<div class="alert alert-error"><i data-lucide="alert-circle" style="width:14px;height:14px;"></i>${e.message}</div>`; lucide.createIcons(); }
+}
+function openOverride(id) {
+  document.getElementById('overrideId').value = id;
+  document.getElementById('overrideReason').value = '';
+  document.getElementById('overrideTOTP').value = '';
+  document.getElementById('overrideModal').classList.remove('hidden');
+}
+async function submitOverride() {
+  try {
+    await api(`/api/v1/admin/anomaly/${document.getElementById('overrideId').value}/override`,'POST',{
+      reason: document.getElementById('overrideReason').value,
+      totp_code: document.getElementById('overrideTOTP').value
+    });
+    document.getElementById('overrideModal').classList.add('hidden');
+    loadAnomalies();
+  } catch(e) { alert(e.message); }
+}
+
+// ── Tally ──────────────────────────────────────────────────────────
+async function loadTally() {
+  const level = document.getElementById('tallyLevel').value;
+  const id = document.getElementById('tallyId').value.trim();
+  if (!id) return;
+  try {
+    const d = await api(`/api/v1/vote/tally/${level}/${id}`);
+    const entries = Object.entries(d.candidate_tallies || {}).sort((a,b)=>b[1]-a[1]);
+    const total = entries.reduce((s,[,v])=>s+v,0)||1;
+    document.getElementById('tallyContent').innerHTML = entries.length
+      ? `<div class="card-header"><div class="card-title"><i data-lucide="bar-chart-3" style="width:14px;height:14px;"></i> ${level.toUpperCase()} Tally — ${id.slice(-8)}</div><span class="badge b-orange">${total.toLocaleString('en-IN')} total votes</span></div>` +
+        entries.map(([cid,count])=>`<div class="tally-row"><div class="tally-label" title="${cid}">${cid.slice(-10)}</div><div class="tally-track"><div class="tally-fill" style="width:${Math.round(count/total*100)}%">${Math.round(count/total*100)}%</div></div><div class="tally-count">${count.toLocaleString('en-IN')}</div></div>`).join('')
+      : `<div class="empty-state"><p>No tally data for this location</p></div>`;
+  } catch(e) { document.getElementById('tallyContent').innerHTML = `<div class="alert alert-error"><i data-lucide="alert-circle" style="width:14px;height:14px;"></i>${e.message}</div>`; lucide.createIcons(); }
+}
+
+// ── Uncontested ────────────────────────────────────────────────────
+async function loadUncontested() {
+  document.getElementById('uncontestedContent').innerHTML = '<div class="loading-state"><div class="spinner"></div> Loading…</div>';
+  try {
+    const d = await api('/api/v1/election/uncontested');
+    if (!d.constituencies?.length) {
+      document.getElementById('uncontestedContent').innerHTML = `<div class="empty-state" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px;"><i data-lucide="award" style="width:36px;height:36px;display:block;margin:0 auto 10px;opacity:.3;"></i><p>No uncontested constituencies declared</p></div>`;
+      lucide.createIcons(); return;
+    }
+    document.getElementById('uncontestedContent').innerHTML = `
+      <div class="tbl-wrap">
+        <div class="tbl-toolbar"><div class="tt-title"><i data-lucide="award" style="width:14px;height:14px;color:var(--purple);"></i> ${d.total} Uncontested Seat${d.total!==1?'s':''}</div></div>
+        <table>
+          <thead><tr><th>Constituency</th><th>State</th><th>Elected Candidate</th><th>Party</th><th>Declared</th><th>Status</th></tr></thead>
+          <tbody>${d.constituencies.map(c=>`<tr>
+            <td style="font-weight:600;">${c.constituency_name}</td>
+            <td class="td-mono">${c.state_id?.slice(-8)}</td>
+            <td>${c.candidate_name}</td>
+            <td>${c.party_name||'—'}</td>
+            <td class="td-mono">${c.declared_at?new Date(c.declared_at).toLocaleString('en-IN'):'—'}</td>
+            <td><span class="unc-badge"><i data-lucide="award" style="width:10px;height:10px;"></i> UNCONTESTED</span></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+    lucide.createIcons();
+  } catch(e) { document.getElementById('uncontestedContent').innerHTML = `<div class="alert alert-error"><i data-lucide="alert-circle" style="width:14px;height:14px;"></i>${e.message}</div>`; lucide.createIcons(); }
+}
+
+// ── Audit ──────────────────────────────────────────────────────────
+async function loadAudit() {
+  const action = document.getElementById('auditFilter').value;
+  document.getElementById('auditContent').innerHTML = '<div class="loading-state"><div class="spinner"></div> Loading…</div>';
+  try {
+    const data = await api('/api/v1/admin/audit-log' + (action?`?action=${action}`:''));
+    document.getElementById('auditContent').innerHTML = `
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Timestamp (IST)</th><th>Actor</th><th>Action</th><th>Booth</th><th>Metadata</th></tr></thead>
+          <tbody>${data.map(l=>`<tr>
+            <td class="td-mono">${new Date(l.logged_at).toLocaleString('en-IN')}</td>
+            <td><span class="badge b-gray">${l.actor_type}</span> <span class="td-mono">${l.actor_id?.slice(-8)}</span></td>
+            <td><span class="td-code">${l.action}</span></td>
+            <td class="td-mono">${l.booth_id?.slice(-8)||'—'}</td>
+            <td style="font-size:11px;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${JSON.stringify(l.metadata)}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+  } catch(e) { document.getElementById('auditContent').innerHTML = `<div class="alert alert-error"><i data-lucide="alert-circle" style="width:14px;height:14px;"></i>${e.message}</div>`; lucide.createIcons(); }
+}
+
+// ── Alert helper ───────────────────────────────────────────────────
+function showAlert(id, msg, type='error') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const icons = {error:'alert-circle',success:'check-circle',warning:'alert-triangle',info:'info'};
+  el.className = `alert alert-${type}`;
+  el.innerHTML = `<i data-lucide="${icons[type]}" style="width:14px;height:14px;"></i><span>${msg}</span>`;
+  el.classList.remove('hidden');
+  lucide.createIcons();
+}
+
+if (adminToken) { document.getElementById('loginWrap').style.display='none'; document.getElementById('mainApp').classList.add('visible'); loadDashboard(); startSSE(); }
+</script>
+</body>
+</html>

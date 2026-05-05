@@ -1,0 +1,62 @@
+# MatSetu Backend Dependencies
+# Python 3.11
+
+# ── Web Framework ─────────────────────────────────────────────────────────────
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+httpx==0.27.2
+
+# ── Database ──────────────────────────────────────────────────────────────────
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.29.0          # async PostgreSQL driver
+psycopg2-binary==2.9.9   # sync driver for Celery workers
+alembic==1.13.3
+
+# ── Redis ─────────────────────────────────────────────────────────────────────
+redis[hiredis]==5.1.1
+
+# ── Config ────────────────────────────────────────────────────────────────────
+pydantic==2.9.2
+pydantic-settings==2.5.2
+python-dotenv==1.0.1
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
+bcrypt==4.2.0
+python-jose[cryptography]==3.3.0
+pyotp==2.9.0
+cryptography==43.0.3
+
+# ── Celery ────────────────────────────────────────────────────────────────────
+celery[redis]==5.4.0
+flower==2.0.1             # Celery monitoring
+
+# ── AI / Face Recognition ─────────────────────────────────────────────────────
+insightface==0.7.3
+onnxruntime==1.19.2       # CPU inference; use onnxruntime-gpu for CUDA
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+
+# ── OCR ───────────────────────────────────────────────────────────────────────
+pytesseract==0.3.13
+
+# ── Vector DB ─────────────────────────────────────────────────────────────────
+qdrant-client==1.12.0
+
+# ── Object Storage ────────────────────────────────────────────────────────────
+minio==7.2.10
+
+# ── SMS / OTP ─────────────────────────────────────────────────────────────────
+twilio==9.3.4
+requests==2.32.3
+
+# ── Monitoring ────────────────────────────────────────────────────────────────
+prometheus-fastapi-instrumentator==7.0.0
+opentelemetry-sdk==1.27.0
+opentelemetry-instrumentation-fastapi==0.48b0
+opentelemetry-exporter-otlp==1.27.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+python-dateutil==2.9.0
+Pillow==10.4.0
+aiofiles==24.1.0

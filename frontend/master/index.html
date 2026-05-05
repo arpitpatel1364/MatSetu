@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MatSetu — Master Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+:root{
+  --saffron:#E8751A;--saffron-dim:rgba(232,117,26,.09);--saffron-mid:rgba(232,117,26,.20);
+  --green:#1A9E4A;--green-dim:rgba(26,158,74,.09);
+  --bg:#06090F;--bg-raised:#0B1019;--surface:#0F1824;
+  --surface2:#172035;--surface3:#1E2B47;
+  --border:#1A2840;--border2:#223252;
+  --text:#EDF1FF;--text-sec:#6E85A8;--text-dim:#354B6A;
+  --success:#1A9E4A;--success-dim:rgba(26,158,74,.09);
+  --error:#C93B3B;--error-dim:rgba(201,59,59,.09);
+  --warning:#C08A1A;--warning-dim:rgba(192,138,26,.09);
+  --info:#2563C4;--info-dim:rgba(37,99,196,.09);
+  --purple:#7C3AED;--purple-dim:rgba(124,58,237,.09);
+  --font:'DM Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+  --t:0.15s cubic-bezier(.4,0,.2,1);--r:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;overflow:hidden}
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(26,40,64,.4) 1px,transparent 1px),linear-gradient(90deg,rgba(26,40,64,.4) 1px,transparent 1px);
+  background-size:32px 32px}
+/* Subtle saffron radial glow */
+body::after{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);
+  width:800px;height:400px;background:radial-gradient(ellipse,rgba(232,117,26,.04),transparent 70%);
+  pointer-events:none;z-index:0}
+
+/* ── Login ─────────────────────────────────────────────────────────── */
+.login-wrap{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+  background:var(--bg)}
+.login-card{position:relative;z-index:1;width:440px;background:var(--surface);
+  border:1px solid var(--border);border-radius:18px;padding:44px;
+  box-shadow:0 32px 80px rgba(0,0,0,.8)}
+.lc-emblem{width:56px;height:56px;margin:0 auto 20px;
+  background:linear-gradient(135deg,var(--saffron),#b05a10);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  box-shadow:0 4px 20px rgba(232,117,26,.35)}
+.lc-title{text-align:center;font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.lc-sub{text-align:center;font-size:12px;color:var(--text-sec);margin-bottom:28px;letter-spacing:.3px}
+.sec-chips{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-bottom:24px}
+.sec-chip{display:flex;align-items:center;gap:4px;padding:3px 9px;border-radius:4px;
+  font-size:10px;font-weight:600;letter-spacing:.4px;
+  background:var(--surface2);border:1px solid var(--border2);color:var(--text-sec)}
+
+/* ── App ─────────────────────────────────────────────────────────────── */
+.app{display:none;height:100vh;flex-direction:column}
+.app.on{display:flex}
+
+/* ── Topbar ──────────────────────────────────────────────────────────── */
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;flex-shrink:0;position:relative;z-index:10}
+.tb-brand{display:flex;align-items:center;gap:10px;padding:0 20px;height:100%;
+  border-right:1px solid var(--border);min-width:260px}
+.tb-emblem{width:30px;height:30px;background:linear-gradient(135deg,var(--saffron),#b05a10);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.tb-name{font-size:14px;font-weight:800;letter-spacing:-.3px}
+.tb-tier{padding:2px 9px;background:rgba(232,117,26,.12);border:1px solid rgba(232,117,26,.25);
+  border-radius:4px;font-size:10px;font-weight:800;color:var(--saffron);
+  letter-spacing:.6px;margin-left:8px}
+.tb-nav{display:flex;align-items:center;height:100%;padding:0 6px;gap:1px}
+.tn{display:flex;align-items:center;gap:6px;padding:0 13px;height:34px;border-radius:7px;
+  font-size:12px;font-weight:500;color:var(--text-sec);cursor:pointer;
+  transition:all var(--t);border:none;background:transparent;white-space:nowrap}
+.tn:hover{background:var(--surface2);color:var(--text)}
+.tn.on{background:var(--surface2);color:var(--text);font-weight:600}
+.tb-right{margin-left:auto;display:flex;align-items:center;height:100%}
+.tb-cell{padding:0 16px;height:100%;border-left:1px solid var(--border);
+  display:flex;flex-direction:column;justify-content:center}
+.tbc-l{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.7px}
+.tbc-v{font-size:12px;font-weight:600}
+.tb-clock{padding:0 16px;height:100%;border-left:1px solid var(--border);
+  display:flex;align-items:center;font-family:var(--mono);font-size:13px;font-weight:500;color:var(--saffron)}
+.tb-exit{padding:0 16px;height:100%;border-left:1px solid var(--border);
+  display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--text-sec);
+  transition:all var(--t)}
+.tb-exit:hover{background:var(--error-dim);color:var(--error)}
+
+/* ── Body ──────────────────────────────────────────────────────────── */
+.body{display:flex;flex:1;overflow:hidden;position:relative;z-index:1}
+.sidebar{width:226px;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.si-scroll{flex:1;overflow-y:auto;padding:10px 0}
+.si-group{padding:12px 14px 3px;font-size:9px;letter-spacing:1.2px;
+  text-transform:uppercase;color:var(--text-dim);font-weight:700}
+.si{display:flex;align-items:center;gap:9px;padding:8px 14px;cursor:pointer;
+  font-size:13px;color:var(--text-sec);border-left:2px solid transparent;transition:all var(--t)}
+.si:hover{background:rgba(255,255,255,.02);color:var(--text)}
+.si.on{background:var(--saffron-dim);color:var(--saffron);border-left-color:var(--saffron);font-weight:500}
+.si svg{opacity:.65;flex-shrink:0}
+.si.on svg{opacity:1}
+.si-footer{padding:14px;border-top:1px solid var(--border);margin-top:auto}
+.sif-row{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text-sec)}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--success);flex-shrink:0;
+  box-shadow:0 0 0 2px rgba(26,158,74,.15);animation:pd 2.5s infinite}
+@keyframes pd{0%,100%{box-shadow:0 0 0 2px rgba(26,158,74,.15)}50%{box-shadow:0 0 0 4px transparent}}
+
+/* ── Main ──────────────────────────────────────────────────────────── */
+.main{flex:1;overflow-y:auto;padding:26px;background:var(--bg-raised)}
+.page{display:none}.page.on{display:block}
+
+/* ── Page header ───────────────────────────────────────────────────── */
+.ph{display:flex;align-items:flex-start;gap:14px;margin-bottom:22px;
+  padding-bottom:18px;border-bottom:1px solid var(--border)}
+.ph-ic{width:40px;height:40px;border-radius:10px;flex-shrink:0;
+  background:var(--saffron-dim);border:1px solid var(--saffron-mid);
+  display:flex;align-items:center;justify-content:center;color:var(--saffron)}
+.ph h2{font-size:18px;font-weight:800;letter-spacing:-.4px}
+.ph p{font-size:12px;color:var(--text-sec);margin-top:2px}
+.ph-right{margin-left:auto;display:flex;gap:8px;align-items:flex-start}
+
+/* ── Stats ──────────────────────────────────────────────────────────── */
+.stats5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:16px 18px;position:relative;overflow:hidden}
+.sc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc-or::after{background:linear-gradient(90deg,var(--saffron),transparent)}
+.sc-gr::after{background:linear-gradient(90deg,var(--success),transparent)}
+.sc-rd::after{background:linear-gradient(90deg,var(--error),transparent)}
+.sc-bl::after{background:linear-gradient(90deg,var(--info),transparent)}
+.sc-pu::after{background:linear-gradient(90deg,var(--purple),transparent)}
+.sc .lbl{font-size:10px;color:var(--text-sec);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.sc .lbl svg{color:var(--text-dim)}
+.sc .val{font-size:28px;font-weight:900;font-family:var(--mono);letter-spacing:-1px}
+.sc-or .val{color:var(--saffron)}.sc-gr .val{color:var(--success)}
+.sc-rd .val{color:var(--error)}.sc-bl .val{color:var(--info)}.sc-pu .val{color:var(--purple)}
+.sc .sub{font-size:10px;color:var(--text-dim);margin-top:5px}
+.prog-bar{height:2px;background:var(--surface2);border-radius:1px;overflow:hidden;margin-top:7px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--saffron),var(--green));transition:width 1s;border-radius:1px}
+
+/* ── Cards ──────────────────────────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.card-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.card-title svg{color:var(--text-sec)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+/* ── Forms ──────────────────────────────────────────────────────────── */
+.fg{margin-bottom:13px}
+label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-sec);margin-bottom:5px}
+.iw{position:relative}
+.ii{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);pointer-events:none;display:flex}
+input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color var(--t),box-shadow var(--t)}
+input,select{padding:9px 12px 9px 34px}
+input.bare,select{padding-left:12px}
+textarea{padding:9px 12px;resize:vertical;min-height:80px}
+input:focus,select:focus,textarea:focus{border-color:var(--saffron);box-shadow:0 0 0 3px var(--saffron-dim)}
+input::placeholder{color:var(--text-dim)}
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:9px 18px;border:none;border-radius:8px;font-family:var(--font);
+  font-size:13px;font-weight:600;cursor:pointer;transition:all var(--t);white-space:nowrap}
+.btn svg{flex-shrink:0}
+.btn-or{background:var(--saffron);color:#fff;box-shadow:0 2px 8px rgba(232,117,26,.3)}
+.btn-or:hover{background:#d0680f}
+.btn-gr{background:var(--success);color:#fff;box-shadow:0 2px 8px rgba(26,158,74,.3)}
+.btn-gr:hover{background:#148040}
+.btn-rd{background:var(--error);color:#fff;box-shadow:0 2px 8px rgba(201,59,59,.3)}
+.btn-rd:hover{background:#b52e2e}
+.btn-gh{background:transparent;color:var(--text-sec);border:1px solid var(--border2)}
+.btn-gh:hover{background:var(--surface2);color:var(--text)}
+.btn-sm{padding:6px 12px;font-size:11px}
+.btn-full{width:100%}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── Alerts ──────────────────────────────────────────────────────────── */
+.alert{display:flex;align-items:flex-start;gap:9px;padding:11px 13px;border-radius:8px;
+  font-size:12px;margin-bottom:12px;border:1px solid transparent;line-height:1.5}
+.alert svg{flex-shrink:0;margin-top:1px}
+.ae{background:var(--error-dim);border-color:rgba(201,59,59,.2);color:#d97373}
+.as{background:var(--success-dim);border-color:rgba(26,158,74,.2);color:#5abf7a}
+.aw{background:var(--warning-dim);border-color:rgba(192,138,26,.2);color:#d4a44a}
+.ai{background:var(--info-dim);border-color:rgba(37,99,196,.2);color:#7aabf0}
+.hidden{display:none!important}
+
+/* ── Table ────────────────────────────────────────────────────────────── */
+.tbl-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.tbl-tb{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--border);background:var(--surface)}
+.tbl-ttl{font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--surface2);padding:9px 13px;text-align:left;font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.8px;font-weight:700;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:10px 13px;border-top:1px solid var(--border);font-size:12px;vertical-align:middle}
+tbody tr:hover td{background:rgba(255,255,255,.012)}
+.td-mono{font-family:var(--mono);font-size:11px;color:var(--text-sec)}
+.td-code{font-family:var(--mono);font-size:10px;background:var(--surface2);padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--text-sec)}
+
+/* ── Badges ────────────────────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.b-or{background:var(--saffron-dim);color:var(--saffron);border:1px solid rgba(232,117,26,.2)}
+.b-gr{background:var(--success-dim);color:var(--success);border:1px solid rgba(26,158,74,.2)}
+.b-rd{background:var(--error-dim);color:var(--error);border:1px solid rgba(201,59,59,.2)}
+.b-bl{background:var(--info-dim);color:var(--info);border:1px solid rgba(37,99,196,.2)}
+.b-pu{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(124,58,237,.2)}
+.b-gy{background:var(--surface2);color:var(--text-sec);border:1px solid var(--border)}
+
+/* ── Dual sign-off section ─────────────────────────────────────────────── */
+.signoff-box{background:rgba(192,138,26,.05);border:1px solid rgba(192,138,26,.2);
+  border-radius:10px;padding:16px;margin-top:14px}
+.signoff-hd{font-size:12px;font-weight:700;color:var(--warning);
+  display:flex;align-items:center;gap:7px;margin-bottom:14px}
+
+/* ── Security rules ────────────────────────────────────────────────────── */
+.sec-rule{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;
+  background:var(--surface2);border-radius:8px;margin-bottom:6px;font-size:12px;
+  border:1px solid var(--border)}
+.sec-id{background:var(--saffron);color:#fff;padding:2px 8px;border-radius:4px;
+  font-size:10px;font-weight:800;font-family:var(--mono);flex-shrink:0;margin-top:1px}
+.sec-text{color:var(--text-sec);line-height:1.5}
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);
+  z-index:200;display:flex;align-items:center;justify-content:center}
+.modal-bg.hidden{display:none}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;
+  padding:26px;width:500px;max-height:80vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.85)}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.modal-ttl{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.modal-cls{width:26px;height:26px;border-radius:6px;background:var(--surface2);
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text-sec);transition:all var(--t)}
+.modal-cls:hover{background:var(--error-dim);color:var(--error)}
+
+/* ── Misc ────────────────────────────────────────────────────────────────── */
+.loading-s{display:flex;align-items:center;gap:9px;padding:22px;color:var(--text-sec);font-size:12px}
+.spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--saffron);border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty-s{text-align:center;padding:40px 20px;color:var(--text-sec)}
+.empty-s svg{margin:0 auto 10px;display:block;opacity:.35}
+.empty-s p{font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="lc-emblem"><i data-lucide="landmark" style="width:24px;height:24px;"></i></div>
+    <div class="lc-title">Master Control Centre</div>
+    <div class="lc-sub">MatSetu T1 — All-India Scope</div>
+    <div class="sec-chips">
+      <span class="sec-chip"><i data-lucide="lock" style="width:9px;height:9px;"></i> bcrypt</span>
+      <span class="sec-chip"><i data-lucide="shield" style="width:9px;height:9px;"></i> TOTP 2FA</span>
+      <span class="sec-chip"><i data-lucide="globe" style="width:9px;height:9px;"></i> IP Allowlist</span>
+      <span class="sec-chip"><i data-lucide="zap" style="width:9px;height:9px;"></i> RLS Active</span>
+    </div>
+    <div id="loginAlert" class="hidden"></div>
+    <div class="fg">
+      <label>Username</label>
+      <div class="iw"><div class="ii"><i data-lucide="user" style="width:12px;height:12px;"></i></div>
+      <input type="text" id="lu" placeholder="master_admin"></div>
+    </div>
+    <div class="fg">
+      <label>Password</label>
+      <div class="iw"><div class="ii"><i data-lucide="key" style="width:12px;height:12px;"></i></div>
+      <input type="password" id="lp" placeholder="••••••••••••"></div>
+    </div>
+    <div class="fg">
+      <label>TOTP Code</label>
+      <div class="iw"><div class="ii"><i data-lucide="smartphone" style="width:12px;height:12px;"></i></div>
+      <input type="tel" id="lt" maxlength="6" placeholder="000000" style="text-align:center;font-family:var(--mono);font-size:22px;letter-spacing:10px;"></div>
+    </div>
+    <button class="btn btn-or btn-full" style="padding:12px 20px;" onclick="doLogin()">
+      <i data-lucide="log-in" style="width:15px;height:15px;"></i> Authenticate
+    </button>
+  </div>
+</div>
+
+<!-- App -->
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="tb-brand">
+      <div class="tb-emblem"><i data-lucide="landmark" style="width:14px;height:14px;"></i></div>
+      <span class="tb-name">MatSetu</span>
+      <span class="tb-tier">T1 MASTER</span>
+    </div>
+    <nav class="tb-nav">
+      <button class="tn on" onclick="pg('dashboard',this)"><i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Dashboard</button>
+      <button class="tn" onclick="pg('security',this)"><i data-lucide="shield-check" style="width:13px;height:13px;"></i> Security</button>
+      <button class="tn" onclick="pg('election',this)"><i data-lucide="vote" style="width:13px;height:13px;"></i> Election</button>
+      <button class="tn" onclick="pg('uncontested',this)"><i data-lucide="award" style="width:13px;height:13px;"></i> Uncontested</button>
+      <button class="tn" onclick="pg('admins',this)"><i data-lucide="user-cog" style="width:13px;height:13px;"></i> Admins</button>
+      <button class="tn" onclick="pg('results',this)"><i data-lucide="file-down" style="width:13px;height:13px;"></i> Export</button>
+      <button class="tn" onclick="pg('audit',this)"><i data-lucide="scroll-text" style="width:13px;height:13px;"></i> Audit</button>
+    </nav>
+    <div class="tb-right">
+      <div class="tb-cell"><div class="tbc-l">Scope</div><div class="tbc-v">All India</div></div>
+      <div class="tb-clock" id="tbClock">00:00:00</div>
+      <div class="tb-exit" onclick="doLogout()"><i data-lucide="log-out" style="width:13px;height:13px;"></i> Logout</div>
+    </div>
+  </header>
+
+  <div class="body">
+    <aside class="sidebar">
+      <div class="si-scroll">
+        <div class="si-group">Overview</div>
+        <div class="si on" onclick="pg('dashboard',null,this)"><i data-lucide="layout-dashboard" style="width:14px;height:14px;"></i> Dashboard</div>
+        <div class="si" onclick="pg('security',null,this)"><i data-lucide="shield-check" style="width:14px;height:14px;"></i> Security Rules</div>
+        <div class="si-group">Election</div>
+        <div class="si" onclick="pg('election',null,this)"><i data-lucide="vote" style="width:14px;height:14px;"></i> Control</div>
+        <div class="si" onclick="pg('uncontested',null,this)"><i data-lucide="award" style="width:14px;height:14px;"></i> Uncontested Seats</div>
+        <div class="si" onclick="pg('results',null,this)"><i data-lucide="file-down" style="width:14px;height:14px;"></i> Results Export</div>
+        <div class="si-group">Administration</div>
+        <div class="si" onclick="pg('admins',null,this)"><i data-lucide="user-cog" style="width:14px;height:14px;"></i> Manage Admins</div>
+        <div class="si" onclick="pg('anomalies',null,this)"><i data-lucide="triangle-alert" style="width:14px;height:14px;"></i> Anomalies</div>
+        <div class="si" onclick="pg('audit',null,this)"><i data-lucide="scroll-text" style="width:14px;height:14px;"></i> Audit Log</div>
+      </div>
+      <div class="si-footer">
+        <div class="sif-row"><div class="sdot"></div> System operational</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:5px;">ECI · MatSetu v1.0 · 950M voters</div>
+      </div>
+    </aside>
+
+    <main class="main">
+
+      <!-- Dashboard -->
+      <div class="page on" id="page-dashboard">
+        <div class="ph">
+          <div class="ph-ic"><i data-lucide="layout-dashboard" style="width:19px;height:19px;"></i></div>
+          <div><h2>National Dashboard</h2><p>All-India live statistics · SSE auto-refresh every 5s</p></div>
+          <div class="ph-right"><button class="btn btn-gh btn-sm" onclick="loadDashboard()"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Refresh</button></div>
+        </div>
+        <div class="stats5">
+          <div class="sc sc-or"><div class="lbl"><i data-lucide="users" style="width:11px;height:11px;"></i> Voters</div><div class="val" id="dV">—</div><div class="sub">Electoral roll</div></div>
+          <div class="sc sc-gr"><div class="lbl"><i data-lucide="check-circle" style="width:11px;height:11px;"></i> Votes Cast</div><div class="val" id="dC">—</div><div class="prog-bar"><div class="prog-fill" id="tBar" style="width:0%"></div></div><div class="sub" id="dPct">0% turnout</div></div>
+          <div class="sc sc-bl"><div class="lbl"><i data-lucide="building-2" style="width:11px;height:11px;"></i> Active Booths</div><div class="val" id="dB">—</div><div class="sub" id="dBT">of — total</div></div>
+          <div class="sc sc-rd"><div class="lbl"><i data-lucide="triangle-alert" style="width:11px;height:11px;"></i> Anomalies</div><div class="val" id="dA">—</div><div class="sub">Open flags</div></div>
+          <div class="sc sc-pu"><div class="lbl"><i data-lucide="award" style="width:11px;height:11px;"></i> Uncontested</div><div class="val" id="dU">—</div><div class="sub">Seats</div></div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-title"><i data-lucide="activity" style="width:14px;height:14px;"></i> Live SSE Feed</div>
+              <span class="badge b-gr" id="sseB">Connecting</span>
+            </div>
+            <div id="sseLog" style="font-family:var(--mono);font-size:10px;color:var(--text-sec);height:140px;overflow-y:auto;line-height:1.9;"></div>
+          </div>
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-title"><i data-lucide="shield-check" style="width:14px;height:14px;"></i> Active Security Rules</div>
+            </div>
+            <div id="secSummary" style="font-size:11px;color:var(--text-sec);line-height:1.8;">SEC-1 Append-only ledger · SEC-2 has_voted immutable · SEC-3 Atomic votes · SEC-4 RLS active · SEC-5 OTP 5min · SEC-6 ZK receipts · SEC-7 JWT scoped · SEC-8 Override audit · SEC-9 TOTP required · SEC-10 Read-only access</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security Rules -->
+      <div class="page" id="page-security">
+        <div class="ph">
+          <div class="ph-ic" style="background:var(--info-dim);border-color:rgba(37,99,196,.2);color:var(--info);"><i data-lucide="shield-check" style="width:19px;height:19px;"></i></div>
+          <div><h2>Security Rules</h2><p>All 10 absolute security constraints enforced in this MatSetu instance</p></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><i data-lucide="lock" style="width:14px;height:14px;"></i> Absolute Constraints</div></div>
+          <div class="sec-rule"><span class="sec-id">SEC-1</span><span class="sec-text">vote_ledger is APPEND-ONLY. UPDATE and DELETE are REVOKED at PostgreSQL DB role level. Trigger enforced as belt-and-suspenders.</span></div>
+          <div class="sec-rule"><span class="sec-id">SEC-2</span><span class="sec-text">voters.has_voted once TRUE is IMMUTABLE. No code path may reset it. Database trigger prevents reversal at row level.</span></div>
+          <div class="sec-rule"><span class="sec-id">SEC-3</span><span class="sec-text">All vote operations are fully atomic: Redis MULTI/EXEC pipeline + PostgreSQL transaction execute together or not at all.</span></div>
+          <div class="sec-rule"><span class="sec-id">SEC-4</span><span class="sec-text">Row Level Security is always ON. Every query respects scope_id and scope_type from JWT claims. Cross-scope reads blocked.</span></div>
+          <div class="sec-rule"><span class="sec-id">SEC-5</span><span class="sec-text">OTPs expire in 5 minutes. Max 3 attempts. OTPs stored exclusively as SHA-256(otp) — plaintext never persisted.</span></div>
+          <div class="sec-rule"><span class="sec-id">SEC-6</span><span class="sec-text">ZK receipts never reveal candidate — only inclusion proof (Helios-style commitment). Receipt verifies presence in ledger only.</span></div>
+          <div class="sec-rule"><span class="sec-id">SEC-7</span><span class="sec-text">JWT tokens are role-scoped. Cross-scope use triggers immediate 403 REJECT. Scopes: all_india, one_state, one_div, one_dist, one_const, one_booth.</span></div>
+          <div class="sec-rule"><span class="sec-id">SEC-8</span><span class="sec-text">All manual admin overrides trigger ANOMALY_OVERRIDE entry in immutable audit_log with actor ID, TOTP confirmation and reason.</span></div>
+          <div class="sec-rule"><span class="sec-id">SEC-9</span><span class="sec-text">Election start/stop and UNCONTESTED declaration require TOTP re-confirmation at time of action, even for authenticated sessions.</span></div>
+          <div class="sec-rule"><span class="sec-id">SEC-10</span><span class="sec-text">Master Admin (T1) has read-only on vote_ledger via RLS pass-through. No INSERT, UPDATE, or DELETE ever permitted for T1.</span></div>
+        </div>
+      </div>
+
+      <!-- Election Control -->
+      <div class="page" id="page-election">
+        <div class="ph">
+          <div class="ph-ic"><i data-lucide="vote" style="width:19px;height:19px;"></i></div>
+          <div><h2>Election Control</h2><p>T1 exclusive — SEC-9 TOTP required for start and stop actions</p></div>
+        </div>
+        <div id="elAlert" class="hidden"></div>
+        <div class="two-col">
+          <div class="card" style="border-color:rgba(26,158,74,.2);">
+            <div class="card-hd"><div class="card-title" style="color:var(--success);"><i data-lucide="play-circle" style="width:15px;height:15px;"></i> Start Election</div></div>
+            <p style="font-size:12px;color:var(--text-sec);margin-bottom:16px;line-height:1.6;">Opens all PENDING constituencies. Activates eligible booths. Marks election_status=OPEN. UNCONTESTED seats excluded.</p>
+            <div class="fg">
+              <label>TOTP Code (SEC-9)</label>
+              <div class="iw"><div class="ii"><i data-lucide="shield-check" style="width:12px;height:12px;"></i></div>
+              <input type="tel" id="startT" maxlength="6" placeholder="6-digit code" style="font-family:var(--mono);letter-spacing:4px;"></div>
+            </div>
+            <button class="btn btn-gr btn-full" onclick="startEl()"><i data-lucide="play" style="width:14px;height:14px;"></i> Start Election</button>
+          </div>
+          <div class="card" style="border-color:rgba(201,59,59,.2);">
+            <div class="card-hd"><div class="card-title" style="color:var(--error);"><i data-lucide="stop-circle" style="width:15px;height:15px;"></i> Stop Election</div></div>
+            <p style="font-size:12px;color:var(--text-sec);margin-bottom:16px;line-height:1.6;">Closes all OPEN constituencies. Deactivates all active booths. Records ELECTION_STOPPED in audit log. Requires TOTP.</p>
+            <div class="fg">
+              <label>TOTP Code (SEC-9)</label>
+              <div class="iw"><div class="ii"><i data-lucide="shield-check" style="width:12px;height:12px;"></i></div>
+              <input type="tel" id="stopT" maxlength="6" placeholder="6-digit code" style="font-family:var(--mono);letter-spacing:4px;"></div>
+            </div>
+            <button class="btn btn-rd btn-full" onclick="stopEl()"><i data-lucide="square" style="width:14px;height:14px;"></i> Stop Election</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Uncontested -->
+      <div class="page" id="page-uncontested">
+        <div class="ph">
+          <div class="ph-ic" style="background:var(--purple-dim);border-color:rgba(124,58,237,.2);color:var(--purple);"><i data-lucide="award" style="width:19px;height:19px;"></i></div>
+          <div><h2>Uncontested Constituencies</h2><p>R1–R8 · T1+T2 dual sign-off · R6 nomination deadline enforced</p></div>
+          <div class="ph-right"><button class="btn btn-gh btn-sm" onclick="loadUncontested()"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Refresh</button></div>
+        </div>
+
+        <div class="alert ai">
+          <i data-lucide="info" style="width:13px;height:13px;"></i>
+          <span>R6: Declaration rejected if nomination deadline not confirmed passed. R7: Reversible before national polls open — same dual sign-off required.</span>
+        </div>
+        <div id="uncAlert" class="hidden"></div>
+
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Declare Constituency Uncontested</div></div>
+          <div class="two-col">
+            <div class="fg"><label>Constituency ID (UUID)</label>
+              <div class="iw"><div class="ii"><i data-lucide="map-pin" style="width:12px;height:12px;"></i></div>
+              <input type="text" id="ucId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>
+            </div>
+            <div class="fg"><label>State Admin ID (T2 UUID)</label>
+              <div class="iw"><div class="ii"><i data-lucide="user" style="width:12px;height:12px;"></i></div>
+              <input type="text" id="ucSAId" placeholder="T2 State Admin UUID"></div>
+            </div>
+          </div>
+          <div class="signoff-box">
+            <div class="signoff-hd"><i data-lucide="users" style="width:14px;height:14px;"></i> Dual Sign-Off Required (R2) — Both TOTPs must be valid</div>
+            <div class="two-col">
+              <div class="fg"><label>Your TOTP (Master Admin)</label>
+                <div class="iw"><div class="ii"><i data-lucide="shield" style="width:12px;height:12px;"></i></div>
+                <input type="tel" id="ucMT" maxlength="6" placeholder="6-digit" style="font-family:var(--mono);letter-spacing:4px;"></div>
+              </div>
+              <div class="fg"><label>State Admin TOTP (T2)</label>
+                <div class="iw"><div class="ii"><i data-lucide="shield" style="width:12px;height:12px;"></i></div>
+                <input type="tel" id="ucST" maxlength="6" placeholder="6-digit" style="font-family:var(--mono);letter-spacing:4px;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="fg" style="margin-top:12px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;font-weight:500;color:var(--text-sec);">
+              <input type="checkbox" id="ucDL" style="width:auto;accent-color:var(--saffron);">
+              I confirm the nomination deadline has passed (R6 mandatory)
+            </label>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:12px;">
+            <button class="btn btn-or" onclick="declareUC()"><i data-lucide="award" style="width:14px;height:14px;"></i> Declare Uncontested</button>
+            <button class="btn btn-gh" onclick="reverseUC()"><i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> Reverse Declaration (R7)</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><i data-lucide="list" style="width:14px;height:14px;"></i> All Uncontested Constituencies</div></div>
+          <div id="ucList"><div class="loading-s"><div class="spinner"></div> Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- Manage Admins -->
+      <div class="page" id="page-admins">
+        <div class="ph">
+          <div class="ph-ic"><i data-lucide="user-cog" style="width:19px;height:19px;"></i></div>
+          <div><h2>Admin Account Management</h2><p>Create T2–T5 admin accounts with scoped access</p></div>
+        </div>
+        <div id="adminAlert" class="hidden"></div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><i data-lucide="user-plus" style="width:14px;height:14px;"></i> Create New Admin</div></div>
+          <div class="two-col">
+            <div class="fg"><label>Username</label>
+              <div class="iw"><div class="ii"><i data-lucide="user" style="width:12px;height:12px;"></i></div>
+              <input type="text" id="naUser" placeholder="state_admin_gj"></div>
+            </div>
+            <div class="fg"><label>Password (min 12 chars)</label>
+              <div class="iw"><div class="ii"><i data-lucide="key" style="width:12px;height:12px;"></i></div>
+              <input type="password" id="naPass"></div>
+            </div>
+            <div class="fg"><label>Role</label>
+              <select id="naRole" class="bare">
+                <option value="T2">T2 — State Admin</option>
+                <option value="T3">T3 — Division Admin</option>
+                <option value="T4">T4 — District Admin</option>
+                <option value="T5">T5 — Constituency Admin</option>
+              </select>
+            </div>
+            <div class="fg"><label>Scope Type</label>
+              <select id="naScope" class="bare">
+                <option value="one_state">one_state</option>
+                <option value="one_div">one_div</option>
+                <option value="one_dist">one_dist</option>
+                <option value="one_const">one_const</option>
+              </select>
+            </div>
+            <div class="fg"><label>Scope ID (UUID)</label>
+              <div class="iw"><div class="ii"><i data-lucide="map-pin" style="width:12px;height:12px;"></i></div>
+              <input type="text" id="naScopeId" placeholder="State/District/Constituency UUID"></div>
+            </div>
+            <div class="fg"><label>IP Allowlist (comma-separated, mandatory for T2)</label>
+              <div class="iw"><div class="ii"><i data-lucide="globe" style="width:12px;height:12px;"></i></div>
+              <input type="text" id="naIP" placeholder="10.0.0.1, 192.168.1.0/24"></div>
+            </div>
+          </div>
+          <button class="btn btn-or" onclick="createAdmin()"><i data-lucide="plus" style="width:14px;height:14px;"></i> Create Admin Account</button>
+          <div id="naResult" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
+      <!-- Results Export -->
+      <div class="page" id="page-results">
+        <div class="ph">
+          <div class="ph-ic"><i data-lucide="file-down" style="width:19px;height:19px;"></i></div>
+          <div><h2>Results Export</h2><p>R5: Uncontested seats included with is_uncontested=TRUE flag in JSON output</p></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><i data-lucide="download" style="width:14px;height:14px;"></i> Export Election Results</div></div>
+          <div class="two-col">
+            <div class="fg"><label>Format</label>
+              <select id="expFmt" class="bare"><option value="json">JSON (R5-compliant)</option><option value="csv">CSV</option></select>
+            </div>
+            <div class="fg"><label>Scope</label>
+              <select id="expScope" class="bare"><option value="all_india">All India</option><option value="state">State</option><option value="constituency">Constituency</option></select>
+            </div>
+          </div>
+          <button class="btn btn-or" onclick="exportResults()"><i data-lucide="download" style="width:14px;height:14px;"></i> Download Results</button>
+          <div id="expResult" style="margin-top:12px;"></div>
+        </div>
+      </div>
+
+      <!-- Anomalies -->
+      <div class="page" id="page-anomalies">
+        <div class="ph">
+          <div class="ph-ic" style="background:var(--error-dim);border-color:rgba(201,59,59,.2);color:var(--error);"><i data-lucide="triangle-alert" style="width:19px;height:19px;"></i></div>
+          <div><h2>All-India Anomaly Events</h2><p>Unresolved security and integrity flags</p></div>
+          <div class="ph-right"><button class="btn btn-gh btn-sm" onclick="loadAnomalies()"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i></button></div>
+        </div>
+        <div id="anContent"><div class="loading-s"><div class="spinner"></div> Loading…</div></div>
+      </div>
+
+      <!-- Audit -->
+      <div class="page" id="page-audit">
+        <div class="ph">
+          <div class="ph-ic"><i data-lucide="scroll-text" style="width:19px;height:19px;"></i></div>
+          <div><h2>Immutable Audit Log</h2><p>SEC-10: Read-only · Every action by every actor</p></div>
+        </div>
+        <div class="card" style="padding:12px;">
+          <div style="display:flex;gap:10px;align-items:center;">
+            <i data-lucide="filter" style="width:13px;height:13px;color:var(--text-dim);flex-shrink:0;"></i>
+            <select id="auditF" class="bare" style="width:210px;" onchange="loadAudit()">
+              <option value="">All Actions</option>
+              <option>VOTE_CAST</option><option>VOTER_SCAN</option><option>ANOMALY_FLAG</option>
+              <option>ANOMALY_OVERRIDE</option><option>OTP_PRINT_FALLBACK</option>
+              <option>UNCONTESTED_DECLARED</option><option>UNCONTESTED_REVERSED</option>
+              <option>ELECTION_STARTED</option><option>ELECTION_STOPPED</option>
+              <option>ADMIN_LOGIN</option><option>WORKER_LOGIN</option>
+            </select>
+            <button class="btn btn-gh btn-sm" onclick="loadAudit()"><i data-lucide="refresh-cw" style="width:12px;height:12px;"></i></button>
+          </div>
+        </div>
+        <div id="auditContent"><div class="loading-s"><div class="spinner"></div> Loading…</div></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+const API = '';
+let token = localStorage.getItem('masterToken') || '';
+let sse = null;
+
+setInterval(() => { const e=document.getElementById('tbClock'); if(e) e.textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}); }, 1000);
+
+async function api(path, method='GET', body=null) {
+  const o={method,headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}};
+  if(body) o.body=JSON.stringify(body);
+  const r=await fetch(API+path,o); const d=await r.json();
+  if(!r.ok) throw new Error(d.detail||'API error'); return d;
+}
+
+async function doLogin() {
+  try {
+    const d = await api('/api/v1/auth/admin/login','POST',{username:document.getElementById('lu').value,password:document.getElementById('lp').value,totp_code:document.getElementById('lt').value});
+    token=d.access_token; localStorage.setItem('masterToken',token);
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('app').classList.add('on');
+    loadDashboard(); startSSE();
+  } catch(e) { al('loginAlert',e.message,'ae'); }
+}
+function doLogout() { localStorage.removeItem('masterToken'); location.reload(); }
+
+function pg(name, navEl, sideEl) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('page-'+name)?.classList.add('on');
+  if(navEl){document.querySelectorAll('.tn').forEach(b=>b.classList.remove('on'));navEl.classList.add('on')}
+  if(sideEl){document.querySelectorAll('.si').forEach(s=>s.classList.remove('on'));sideEl.classList.add('on')}
+  const m={uncontested:loadUncontested,audit:loadAudit,anomalies:loadAnomalies};
+  m[name]?.();
+}
+
+function startSSE() {
+  if(sse) sse.close();
+  sse = new EventSource('/api/v1/sse/tally/national');
+  const log=document.getElementById('sseLog'), b=document.getElementById('sseB');
+  sse.onopen=()=>{b.className='badge b-gr';b.textContent='Connected'};
+  sse.onerror=()=>{b.className='badge b-rd';b.textContent='Disconnected'};
+  sse.onmessage=e=>{
+    const d=JSON.parse(e.data);
+    if(d.event==='tally_update'){
+      document.getElementById('dV').textContent=d.total_voters?.toLocaleString('en-IN')||'—';
+      document.getElementById('dC').textContent=d.total_voted?.toLocaleString('en-IN')||'—';
+      document.getElementById('dPct').textContent=d.turnout_percent+'% turnout';
+      document.getElementById('tBar').style.width=Math.min(d.turnout_percent,100)+'%';
+      document.getElementById('dB').textContent=d.active_booths?.toLocaleString('en-IN')||'—';
+      document.getElementById('dA').textContent=d.anomaly_count||'0';
+      if(log){const t=new Date().toLocaleTimeString('en-IN',{hour12:false});log.innerHTML=`<div>${t} — turnout:${d.turnout_percent}% anomalies:${d.anomaly_count}</div>`+log.innerHTML;if(log.children.length>20)log.removeChild(log.lastChild);}
+    }
+  };
+}
+
+async function loadDashboard() {
+  try {
+    const d=await api('/api/v1/admin/dashboard');
+    document.getElementById('dV').textContent=d.total_voters.toLocaleString('en-IN');
+    document.getElementById('dC').textContent=d.total_voted.toLocaleString('en-IN');
+    document.getElementById('dPct').textContent=d.turnout_percent+'% turnout';
+    document.getElementById('tBar').style.width=Math.min(d.turnout_percent,100)+'%';
+    document.getElementById('dB').textContent=d.active_booths.toLocaleString('en-IN');
+    document.getElementById('dBT').textContent=`of ${d.total_booths.toLocaleString('en-IN')} total`;
+    document.getElementById('dA').textContent=d.anomaly_count;
+    document.getElementById('dU').textContent=d.uncontested_count;
+  } catch(e){console.error(e);}
+}
+
+async function startEl() { try { const r=await api('/api/v1/admin/election/start','POST',{totp_code:document.getElementById('startT').value}); al('elAlert',r.message,'as'); } catch(e){al('elAlert',e.message,'ae');} }
+async function stopEl() { if(!confirm('Stop the election? All constituencies close.')) return; try { const r=await api('/api/v1/admin/election/stop','POST',{totp_code:document.getElementById('stopT').value}); al('elAlert',r.message,'as'); } catch(e){al('elAlert',e.message,'ae');} }
+
+async function declareUC() {
+  if(!document.getElementById('ucDL').checked) return al('uncAlert','Confirm nomination deadline has passed (R6)','aw');
+  try {
+    const r=await api(`/api/v1/election/uncontested/${document.getElementById('ucId').value}`,'POST',{
+      master_admin_totp:document.getElementById('ucMT').value,
+      state_admin_id:document.getElementById('ucSAId').value,
+      state_admin_totp:document.getElementById('ucST').value,
+      nomination_deadline_passed:true
+    });
+    al('uncAlert',`Declared uncontested: ${r.candidate_name} — ${r.constituency_name}`,'as');
+    loadUncontested();
+  } catch(e){al('uncAlert',e.message,'ae');}
+}
+
+async function reverseUC() {
+  const reason=prompt('Reason for reversal (required — R7):');
+  if(!reason) return;
+  try {
+    await api(`/api/v1/election/uncontested/${document.getElementById('ucId').value}`,'DELETE',{
+      master_admin_totp:document.getElementById('ucMT').value,
+      state_admin_id:document.getElementById('ucSAId').value,
+      state_admin_totp:document.getElementById('ucST').value,
+      reason
+    });
+    al('uncAlert','Uncontested declaration reversed — constituency reset to PENDING (R7)','as');
+    loadUncontested();
+  } catch(e){al('uncAlert',e.message,'ae');}
+}
+
+async function loadUncontested() {
+  document.getElementById('ucList').innerHTML='<div class="loading-s"><div class="spinner"></div> Loading…</div>';
+  try {
+    const d=await api('/api/v1/election/uncontested');
+    if(!d.constituencies?.length){document.getElementById('ucList').innerHTML='<div class="empty-s"><p>No uncontested constituencies declared</p></div>';return;}
+    document.getElementById('ucList').innerHTML=`<div class="tbl-wrap"><table><thead><tr><th>Constituency</th><th>State</th><th>Elected Candidate</th><th>Declared At</th><th>Status</th></tr></thead><tbody>${d.constituencies.map(c=>`<tr><td style="font-weight:600;">${c.constituency_name}</td><td class="td-mono">${c.state_id?.slice(-8)}</td><td>${c.candidate_name}</td><td class="td-mono">${c.declared_at?new Date(c.declared_at).toLocaleString('en-IN'):'—'}</td><td><span class="badge b-pu"><i data-lucide="award" style="width:9px;height:9px;"></i> UNCONTESTED</span></td></tr>`).join('')}</tbody></table></div>`;
+    lucide.createIcons();
+  } catch(e){document.getElementById('ucList').innerHTML=`<div class="alert ae"><i data-lucide="alert-circle" style="width:13px;height:13px;"></i>${e.message}</div>`;lucide.createIcons();}
+}
+
+async function createAdmin() {
+  const ip=document.getElementById('naIP').value;
+  try {
+    const r=await api('/api/v1/auth/admin/create','POST',{username:document.getElementById('naUser').value,password:document.getElementById('naPass').value,role:document.getElementById('naRole').value,scope_type:document.getElementById('naScope').value,scope_id:document.getElementById('naScopeId').value||undefined,ip_allowlist:ip?ip.split(',').map(s=>s.trim()):[]});
+    document.getElementById('naResult').innerHTML=`<div class="alert as"><i data-lucide="check-circle" style="width:13px;height:13px;"></i> Admin created: ${r.username} (${r.role})${r.totp_uri?'<br><small style="font-family:var(--mono);font-size:10px;word-break:break-all;">TOTP URI: '+r.totp_uri+'</small>':''}</div>`;
+    lucide.createIcons();
+  } catch(e){document.getElementById('naResult').innerHTML=`<div class="alert ae"><i data-lucide="alert-circle" style="width:13px;height:13px;"></i>${e.message}</div>`;lucide.createIcons();}
+}
+
+async function loadAnomalies() {
+  document.getElementById('anContent').innerHTML='<div class="loading-s"><div class="spinner"></div> Loading…</div>';
+  try {
+    const data=await api('/api/v1/admin/anomalies?limit=100');
+    if(!data.length){document.getElementById('anContent').innerHTML='<div class="empty-s" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;"><i data-lucide="check-circle" style="width:32px;height:32px;color:var(--success);"></i><p style="color:var(--success);">No unresolved anomalies</p></div>';lucide.createIcons();return;}
+    document.getElementById('anContent').innerHTML=`<div class="tbl-wrap"><table><thead><tr><th>Flag</th><th>Booth</th><th>Detected</th><th>Details</th></tr></thead><tbody>${data.map(a=>`<tr><td><span class="badge b-rd">${a.flag_type.replace('FLAG_','')}</span></td><td class="td-mono">${a.booth_id?.slice(-10)||'—'}</td><td class="td-mono">${new Date(a.created_at).toLocaleString('en-IN')}</td><td style="font-size:11px;color:var(--text-sec);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${JSON.stringify(a.details)}</td></tr>`).join('')}</tbody></table></div>`;
+  } catch(e){document.getElementById('anContent').innerHTML=`<div class="alert ae"><i data-lucide="alert-circle" style="width:13px;height:13px;"></i>${e.message}</div>`;lucide.createIcons();}
+}
+
+async function loadAudit() {
+  const action=document.getElementById('auditF').value;
+  document.getElementById('auditContent').innerHTML='<div class="loading-s"><div class="spinner"></div> Loading…</div>';
+  try {
+    const data=await api('/api/v1/admin/audit-log'+(action?`?action=${action}`:''));
+    document.getElementById('auditContent').innerHTML=`<div class="tbl-wrap"><table><thead><tr><th>Timestamp (IST)</th><th>Actor</th><th>Action</th><th>Booth</th><th>Metadata</th></tr></thead><tbody>${data.map(l=>`<tr><td class="td-mono">${new Date(l.logged_at).toLocaleString('en-IN')}</td><td><span class="badge b-gy">${l.actor_type}</span> <span class="td-mono">${l.actor_id?.slice(-8)}</span></td><td><span class="td-code">${l.action}</span></td><td class="td-mono">${l.booth_id?.slice(-8)||'—'}</td><td style="font-size:10px;color:var(--text-dim);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${JSON.stringify(l.metadata)}</td></tr>`).join('')}</tbody></table></div>`;
+  } catch(e){document.getElementById('auditContent').innerHTML=`<div class="alert ae"><i data-lucide="alert-circle" style="width:13px;height:13px;"></i>${e.message}</div>`;lucide.createIcons();}
+}
+
+async function exportResults() {
+  try {
+    const d=await api('/api/v1/results/uncontested');
+    const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download=`matsetu_results_${new Date().toISOString().split('T')[0]}.json`; a.click();
+    document.getElementById('expResult').innerHTML='<div class="alert as"><i data-lucide="check-circle" style="width:13px;height:13px;"></i> Results exported with is_uncontested=TRUE flag (R5 compliant)</div>';
+    lucide.createIcons();
+  } catch(e){document.getElementById('expResult').innerHTML=`<div class="alert ae"><i data-lucide="alert-circle" style="width:13px;height:13px;"></i>${e.message}</div>`;lucide.createIcons();}
+}
+
+function al(id,msg,cls) {
+  const el=document.getElementById(id);if(!el)return;
+  const ic={ae:'alert-circle',as:'check-circle',aw:'alert-triangle',ai:'info'};
+  el.className=`alert ${cls}`;
+  el.innerHTML=`<i data-lucide="${ic[cls]||'info'}" style="width:13px;height:13px;"></i><span>${msg}</span>`;
+  el.classList.remove('hidden'); lucide.createIcons();
+}
+
+if(token){document.getElementById('loginWrap').style.display='none';document.getElementById('app').classList.add('on');loadDashboard();startSSE();}
+</script>
+</body>
+</html>

@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MatSetu — Booth Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+/* ── Design Tokens ─────────────────────────────────────────── */
+:root {
+  --saffron: #E8751A;
+  --saffron-dim: rgba(232,117,26,0.10);
+  --saffron-mid: rgba(232,117,26,0.22);
+  --green:   #1A9E4A;
+  --green-dim: rgba(26,158,74,0.10);
+  --bg:        #070B12;
+  --bg-raised: #0C1220;
+  --surface:   #101826;
+  --surface2:  #18243A;
+  --surface3:  #1F2E48;
+  --border:    #1E2D44;
+  --border2:   #263550;
+  --text:      #ECF0FF;
+  --text-sec:  #7A8EAE;
+  --text-dim:  #3D4F6A;
+  --success:   #1A9E4A;
+  --success-dim: rgba(26,158,74,0.10);
+  --error:     #C93B3B;
+  --error-dim: rgba(201,59,59,0.10);
+  --warning:   #C08A1A;
+  --warning-dim: rgba(192,138,26,0.10);
+  --info:      #2563C4;
+  --info-dim:  rgba(37,99,196,0.10);
+  --font: 'DM Sans', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --t: 0.16s cubic-bezier(0.4,0,0.2,1);
+  --r: 10px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body { font-family: var(--font); background: var(--bg); color: var(--text);
+       min-height: 100vh; -webkit-font-smoothing: antialiased; overflow: hidden; }
+::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── Grid texture ──────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(30,45,68,0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30,45,68,0.4) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── Topbar ────────────────────────────────────────────────── */
+.topbar {
+  position: relative; z-index: 10;
+  height: 56px; display: flex; align-items: center; gap: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+}
+.topbar-brand {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 24px; height: 100%;
+  border-right: 1px solid var(--border);
+  min-width: 280px;
+}
+.brand-mark {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--saffron), #c05a10);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.brand-mark svg { color: #fff; }
+.brand-name { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+.brand-sub { font-size: 10px; color: var(--text-sec); letter-spacing: 1px; text-transform: uppercase; }
+
+.topbar-booth {
+  display: flex; align-items: center; gap: 20px;
+  padding: 0 24px; height: 100%;
+  border-right: 1px solid var(--border);
+}
+.topbar-field { display: flex; flex-direction: column; }
+.topbar-field .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; }
+.topbar-field .value { font-size: 13px; font-weight: 600; color: var(--text); }
+
+.topbar-right {
+  margin-left: auto; display: flex; align-items: center; gap: 0;
+  height: 100%;
+}
+.topbar-stat {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 20px; height: 100%;
+  border-left: 1px solid var(--border);
+  font-size: 12px;
+}
+.topbar-stat .stat-label { color: var(--text-sec); }
+.topbar-stat .stat-val { font-weight: 700; font-size: 18px; color: var(--saffron); font-family: var(--mono); }
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--success); flex-shrink: 0;
+  box-shadow: 0 0 0 2px var(--success-dim);
+  animation: pulse-dot 2.5s infinite;
+}
+@keyframes pulse-dot { 0%,100%{box-shadow:0 0 0 2px var(--success-dim)} 50%{box-shadow:0 0 0 5px rgba(26,158,74,0.05)} }
+.clock-display {
+  padding: 0 20px; height: 100%;
+  border-left: 1px solid var(--border);
+  display: flex; align-items: center;
+  font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--saffron);
+  letter-spacing: 1px;
+}
+
+/* ── Layout ────────────────────────────────────────────────── */
+.layout {
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: 280px 1fr;
+  height: calc(100vh - 56px);
+}
+
+/* ── Sidebar ───────────────────────────────────────────────── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-inner { flex: 1; overflow-y: auto; padding: 16px 0; }
+
+.sidebar-section-label {
+  padding: 8px 20px 4px;
+  font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--text-dim); font-weight: 600;
+}
+.step-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 20px; cursor: default; user-select: none;
+  transition: background var(--t);
+  position: relative;
+}
+.step-num {
+  width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; font-family: var(--mono);
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-dim); transition: all var(--t);
+}
+.step-text { font-size: 13px; color: var(--text-sec); transition: color var(--t); }
+
+.step-item.active .step-num {
+  background: var(--saffron); border-color: var(--saffron); color: #fff;
+  box-shadow: 0 2px 8px rgba(232,117,26,0.4);
+}
+.step-item.active .step-text { color: var(--text); font-weight: 500; }
+.step-item.active::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 2px; background: var(--saffron);
+}
+.step-item.done .step-num {
+  background: var(--success); border-color: var(--success); color: #fff;
+}
+.step-item.done .step-text { color: var(--text-sec); }
+.step-item.done .step-check { margin-left: auto; color: var(--success); opacity: 0.7; }
+
+.sidebar-divider { height: 1px; background: var(--border); margin: 10px 0; }
+
+.sidebar-card {
+  margin: 0 12px 8px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+}
+.sidebar-card .sc-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-dim); margin-bottom: 6px; }
+.sidebar-card .sc-value { font-size: 28px; font-weight: 700; font-family: var(--mono); color: var(--saffron); }
+.sidebar-card .sc-sub { font-size: 11px; color: var(--text-sec); margin-top: 2px; }
+
+.reauth-bar {
+  margin: 0 12px 8px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 14px;
+}
+.reauth-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.reauth-row .rl { font-size: 11px; color: var(--text-sec); display: flex; align-items: center; gap: 6px; }
+.reauth-row .rv { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--warning); }
+.reauth-track { height: 3px; background: var(--surface3); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+.reauth-fill { height: 100%; background: var(--saffron); border-radius: 2px; transition: width 1s linear; }
+
+/* ── Content ───────────────────────────────────────────────── */
+.content {
+  overflow-y: auto; padding: 24px;
+  background: var(--bg-raised);
+}
+
+.screen { display: none; animation: fadeSlide 0.2s ease; }
+.screen.active { display: block; }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Page Header ───────────────────────────────────────────── */
+.page-hd {
+  display: flex; align-items: flex-start; gap: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.page-hd-icon {
+  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  background: var(--saffron-dim); border: 1px solid var(--saffron-mid);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--saffron);
+}
+.page-hd h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.page-hd p { font-size: 12px; color: var(--text-sec); margin-top: 2px; }
+.step-badge {
+  margin-left: auto;
+  background: var(--saffron-dim); border: 1px solid var(--saffron-mid);
+  padding: 4px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; color: var(--saffron);
+  white-space: nowrap;
+}
+
+/* ── Cards ─────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* ── Form ──────────────────────────────────────────────────── */
+.fg { margin-bottom: 14px; }
+label {
+  display: block; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--text-sec); margin-bottom: 6px;
+}
+.input-wrap { position: relative; }
+.input-icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--text-dim); pointer-events: none;
+  display: flex; align-items: center;
+}
+input, select {
+  width: 100%;
+  padding: 10px 14px 10px 40px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font); font-size: 14px;
+  outline: none;
+  transition: border-color var(--t), box-shadow var(--t);
+}
+input.no-icon, select { padding-left: 14px; }
+input:focus, select:focus {
+  border-color: var(--saffron);
+  box-shadow: 0 0 0 3px var(--saffron-dim);
+}
+input::placeholder { color: var(--text-dim); }
+
+/* ── Buttons ───────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 20px; border: none; border-radius: 8px;
+  font-family: var(--font); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all var(--t); white-space: nowrap;
+  outline: none;
+}
+.btn-primary {
+  background: var(--saffron); color: #fff;
+  box-shadow: 0 2px 8px rgba(232,117,26,0.35);
+}
+.btn-primary:hover { background: #d0680f; box-shadow: 0 4px 12px rgba(232,117,26,0.45); }
+.btn-success {
+  background: var(--success); color: #fff;
+  box-shadow: 0 2px 8px rgba(26,158,74,0.35);
+}
+.btn-success:hover { background: #168040; }
+.btn-ghost {
+  background: transparent; color: var(--text-sec);
+  border: 1px solid var(--border2);
+}
+.btn-ghost:hover { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+.btn-danger { background: var(--error); color: #fff; }
+.btn-full { width: 100%; }
+.btn-lg { padding: 13px 28px; font-size: 15px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn svg { flex-shrink: 0; }
+
+.btn-row { display: flex; gap: 10px; margin-top: 16px; }
+.btn-row .btn { flex: 1; }
+
+/* ── Alerts ────────────────────────────────────────────────── */
+.alert {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; border-radius: 8px;
+  font-size: 13px; margin-bottom: 14px;
+  border: 1px solid transparent;
+}
+.alert svg { flex-shrink: 0; margin-top: 1px; }
+.alert-error { background: var(--error-dim); border-color: rgba(201,59,59,0.2); color: #e57373; }
+.alert-success { background: var(--success-dim); border-color: rgba(26,158,74,0.2); color: #4caf7a; }
+.alert-warning { background: var(--warning-dim); border-color: rgba(192,138,26,0.2); color: #d4a44a; }
+.alert-info { background: var(--info-dim); border-color: rgba(37,99,196,0.2); color: #7aabf0; }
+.alert.hidden { display: none; }
+
+/* ── Language selector ─────────────────────────────────────── */
+.lang-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+.lang-chip {
+  padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all var(--t);
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-sec);
+}
+.lang-chip:hover { border-color: var(--saffron); color: var(--saffron); }
+.lang-chip.active { background: var(--saffron-dim); border-color: var(--saffron); color: var(--saffron); }
+
+/* ── Voter card ────────────────────────────────────────────── */
+.voter-card {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 10px; padding: 18px;
+  display: flex; gap: 16px; align-items: flex-start;
+}
+.voter-avatar {
+  width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim);
+}
+.voter-info { flex: 1; }
+.voter-name { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 4px; }
+.voter-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; margin-top: 8px; }
+.vm-row { font-size: 12px; color: var(--text-sec); }
+.vm-row strong { color: var(--text); font-weight: 500; }
+.voter-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 4px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  margin-top: 10px;
+}
+.vb-ok { background: var(--success-dim); color: var(--success); border: 1px solid rgba(26,158,74,0.2); }
+.vb-voted { background: var(--error-dim); color: var(--error); border: 1px solid rgba(201,59,59,0.2); }
+
+/* ── Camera ────────────────────────────────────────────────── */
+.camera-container {
+  background: #000; border-radius: 10px; overflow: hidden;
+  aspect-ratio: 4/3; position: relative;
+  border: 1px solid var(--border);
+}
+.camera-container video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.camera-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.face-guide {
+  width: 180px; height: 220px;
+  border: 2px solid rgba(232,117,26,0.7);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(232,117,26,0.2), inset 0 0 0 1px rgba(232,117,26,0.1);
+  position: relative;
+}
+.face-guide::before, .face-guide::after {
+  content: ''; position: absolute;
+  width: 16px; height: 16px;
+  border: 2px solid var(--saffron);
+}
+.face-guide::before { top: -1px; left: -1px; border-right: none; border-bottom: none; border-radius: 4px 0 0 0; }
+.face-guide::after { bottom: -1px; right: -1px; border-left: none; border-top: none; border-radius: 0 0 4px 0; }
+
+.camera-status {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  background: rgba(7,11,18,0.85); backdrop-filter: blur(4px);
+  border: 1px solid var(--border2);
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 12px; color: var(--text);
+  white-space: nowrap;
+}
+.scan-line {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--saffron), transparent);
+  top: 0; animation: scan 2s ease-in-out infinite;
+}
+@keyframes scan { 0% { top: 10%; } 100% { top: 90%; } }
+
+/* ── Match score ───────────────────────────────────────────── */
+.score-row { display: flex; align-items: center; gap: 12px; margin: 14px 0; }
+.score-label { font-size: 12px; color: var(--text-sec); width: 80px; flex-shrink: 0; }
+.score-track { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; background: var(--saffron); }
+.score-fill.good { background: var(--success); }
+.score-fill.poor { background: var(--error); }
+.score-pct { font-family: var(--mono); font-size: 13px; font-weight: 600; width: 42px; text-align: right; }
+
+/* ── OTP input ─────────────────────────────────────────────── */
+.otp-row { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+.otp-box {
+  width: 52px; height: 62px; background: var(--surface2);
+  border: 1.5px solid var(--border2); border-radius: 10px;
+  text-align: center; font-size: 26px; font-weight: 700;
+  color: var(--saffron); font-family: var(--mono);
+  outline: none; transition: all var(--t);
+  caret-color: var(--saffron);
+}
+.otp-box:focus { border-color: var(--saffron); box-shadow: 0 0 0 3px var(--saffron-dim); }
+.otp-timer-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--surface2); border-radius: 8px;
+  margin-bottom: 14px; font-size: 12px; color: var(--text-sec);
+}
+.otp-timer-row .timer-val { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--warning); }
+
+/* ── Ballot ────────────────────────────────────────────────── */
+.ballot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.candidate-card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 16px; cursor: pointer;
+  transition: all var(--t); position: relative;
+  text-align: center; user-select: none;
+}
+.candidate-card:hover { border-color: var(--saffron); background: rgba(232,117,26,0.04); }
+.candidate-card.selected {
+  border-color: var(--success); background: var(--success-dim);
+  box-shadow: 0 0 0 3px rgba(26,158,74,0.15);
+}
+.cand-serial {
+  position: absolute; top: 10px; left: 10px;
+  width: 20px; height: 20px; border-radius: 4px;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; font-family: var(--mono); color: var(--text-dim);
+}
+.cand-symbol {
+  width: 56px; height: 56px; border-radius: 10px; margin: 0 auto 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim);
+}
+.cand-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+.cand-party { font-size: 11px; color: var(--text-sec); }
+.cand-abbr {
+  display: inline-block; margin-top: 6px;
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 2px 8px; border-radius: 4px;
+  font-size: 10px; font-weight: 700; font-family: var(--mono); color: var(--text-sec);
+}
+
+.confirm-panel {
+  background: var(--surface2); border: 1.5px solid var(--saffron);
+  border-radius: 12px; padding: 20px; margin-top: 16px;
+  display: none;
+}
+.confirm-panel.show { display: block; }
+.confirm-name { font-size: 20px; font-weight: 700; color: var(--saffron); margin-bottom: 4px; }
+.confirm-sub { font-size: 13px; color: var(--text-sec); margin-bottom: 18px; }
+
+/* ── Receipt ───────────────────────────────────────────────── */
+.receipt-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+}
+.receipt-header {
+  background: linear-gradient(135deg, var(--saffron), #c05a10);
+  padding: 20px 24px; text-align: center;
+}
+.receipt-header h3 { font-size: 16px; font-weight: 700; color: #fff; }
+.receipt-header p { font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 2px; }
+.receipt-body { padding: 20px 24px; }
+.receipt-field { margin-bottom: 12px; }
+.receipt-field .rf-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-dim); margin-bottom: 3px; }
+.receipt-field .rf-value { font-family: var(--mono); font-size: 12px; color: var(--text); word-break: break-all; background: var(--surface2); padding: 8px 10px; border-radius: 6px; }
+.receipt-divider { height: 1px; background: var(--border); margin: 14px 0; }
+.receipt-note { font-size: 11px; color: var(--text-dim); text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+.success-mark {
+  width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 16px;
+  background: var(--success-dim); border: 2px solid rgba(26,158,74,0.3);
+  display: flex; align-items: center; justify-content: center; color: var(--success);
+}
+
+/* ── Utility ───────────────────────────────────────────────── */
+.hidden { display: none !important; }
+.sep { height: 1px; background: var(--border); margin: 16px 0; }
+.text-center { text-align: center; }
+.text-muted { color: var(--text-sec); }
+.text-sm { font-size: 12px; }
+.mt-12 { margin-top: 12px; }
+.loading-row { display: flex; align-items: center; gap: 8px; padding: 20px; color: var(--text-sec); font-size: 13px; }
+.spinner { width: 18px; height: 18px; border: 2px solid var(--border2); border-top-color: var(--saffron); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-mark">
+      <i data-lucide="landmark" style="width:16px;height:16px;"></i>
+    </div>
+    <div>
+      <div class="brand-name">MatSetu</div>
+      <div class="brand-sub">Booth Terminal</div>
+    </div>
+  </div>
+  <div class="topbar-booth">
+    <div class="topbar-field">
+      <span class="label">Booth</span>
+      <span class="value" id="boothName">Polling Booth #001</span>
+    </div>
+    <div class="topbar-field">
+      <span class="label">Worker</span>
+      <span class="value" id="workerName">Not authenticated</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div class="status-dot"></div>
+      <span style="font-size:11px;color:var(--text-sec);">Online</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-stat">
+      <span class="stat-label">Votes</span>
+      <span class="stat-val" id="boothVotes">0</span>
+    </div>
+    <div class="clock-display" id="clockDisplay">00:00:00</div>
+  </div>
+</header>
+
+<!-- Main layout -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <div class="sidebar-section-label">Voter Authentication</div>
+
+      <div class="step-item active" data-step="1">
+        <div class="step-num">01</div>
+        <div class="step-text">ID Scan</div>
+        <i data-lucide="check" class="step-check hidden" style="width:14px;height:14px;margin-left:auto;"></i>
+      </div>
+      <div class="step-item" data-step="2">
+        <div class="step-num">02</div>
+        <div class="step-text">Voter Lookup</div>
+        <i data-lucide="check" class="step-check hidden" style="width:14px;height:14px;margin-left:auto;"></i>
+      </div>
+      <div class="step-item" data-step="3">
+        <div class="step-num">03</div>
+        <div class="step-text">Liveness Check</div>
+        <i data-lucide="check" class="step-check hidden" style="width:14px;height:14px;margin-left:auto;"></i>
+      </div>
+      <div class="step-item" data-step="4">
+        <div class="step-num">04</div>
+        <div class="step-text">Face Verification</div>
+        <i data-lucide="check" class="step-check hidden" style="width:14px;height:14px;margin-left:auto;"></i>
+      </div>
+      <div class="step-item" data-step="5">
+        <div class="step-num">05</div>
+        <div class="step-text">Eligibility Check</div>
+        <i data-lucide="check" class="step-check hidden" style="width:14px;height:14px;margin-left:auto;"></i>
+      </div>
+      <div class="step-item" data-step="6">
+        <div class="step-num">06</div>
+        <div class="step-text">OTP Dispatch</div>
+        <i data-lucide="check" class="step-check hidden" style="width:14px;height:14px;margin-left:auto;"></i>
+      </div>
+      <div class="step-item" data-step="7">
+        <div class="step-num">07</div>
+        <div class="step-text">OTP Verification</div>
+        <i data-lucide="check" class="step-check hidden" style="width:14px;height:14px;margin-left:auto;"></i>
+      </div>
+      <div class="step-item" data-step="8">
+        <div class="step-num">08</div>
+        <div class="step-text">Ballot Display</div>
+        <i data-lucide="check" class="step-check hidden" style="width:14px;height:14px;margin-left:auto;"></i>
+      </div>
+      <div class="step-item" data-step="9">
+        <div class="step-num">09</div>
+        <div class="step-text">Vote Confirmation</div>
+        <i data-lucide="check" class="step-check hidden" style="width:14px;height:14px;margin-left:auto;"></i>
+      </div>
+      <div class="step-item" data-step="10">
+        <div class="step-num">10</div>
+        <div class="step-text">ZK Receipt</div>
+        <i data-lucide="check" class="step-check hidden" style="width:14px;height:14px;margin-left:auto;"></i>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- Session stats -->
+      <div class="reauth-bar">
+        <div class="reauth-row">
+          <span class="rl"><i data-lucide="timer" style="width:12px;height:12px;"></i> Re-auth in</span>
+          <span class="rv" id="reauthTimer">30:00</span>
+        </div>
+        <div class="reauth-track">
+          <div class="reauth-fill" id="reauthFill" style="width:100%"></div>
+        </div>
+        <div class="reauth-row" style="margin-top:8px;margin-bottom:0;">
+          <span class="rl"><i data-lucide="bar-chart-2" style="width:12px;height:12px;"></i> Votes this session</span>
+          <span class="rv" id="sessionCount">0 / 20</span>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="sc-label">Booth Tally</div>
+        <div class="sc-value" id="tallyCount">—</div>
+        <div class="sc-sub">votes recorded today</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="content">
+
+    <!-- Screen 1: EPIC Scan -->
+    <div class="screen active" id="screen-scan">
+      <div class="page-hd">
+        <div class="page-hd-icon"><i data-lucide="credit-card" style="width:20px;height:20px;"></i></div>
+        <div>
+          <h2>Voter Identification</h2>
+          <p>Enter EPIC number or scan the voter ID card</p>
+        </div>
+        <div class="step-badge">Step 1 of 10</div>
+      </div>
+
+      <div class="lang-row" id="langRow">
+        <div class="lang-chip active" onclick="setLang('hi',this)">हिंदी</div>
+        <div class="lang-chip" onclick="setLang('en',this)">English</div>
+        <div class="lang-chip" onclick="setLang('gu',this)">ગુજ.</div>
+        <div class="lang-chip" onclick="setLang('ta',this)">தமிழ்</div>
+        <div class="lang-chip" onclick="setLang('te',this)">తెలుగు</div>
+        <div class="lang-chip" onclick="setLang('mr',this)">मराठी</div>
+        <div class="lang-chip" onclick="setLang('bn',this)">বাংলা</div>
+        <div class="lang-chip" onclick="setLang('kn',this)">ಕನ್ನಡ</div>
+        <div class="lang-chip" onclick="setLang('ml',this)">മലയ്.</div>
+        <div class="lang-chip" onclick="setLang('pa',this)">ਪੰਜਾਬੀ</div>
+        <div class="lang-chip" onclick="setLang('or',this)">ଓଡ଼ିଆ</div>
+      </div>
+
+      <div class="card">
+        <div class="fg">
+          <label>EPIC Number</label>
+          <div class="input-wrap">
+            <div class="input-icon"><i data-lucide="id-card" style="width:15px;height:15px;"></i></div>
+            <input type="text" id="epicInput" placeholder="e.g. GJ12345678" maxlength="20"
+              oninput="this.value=this.value.toUpperCase()" autofocus>
+          </div>
+        </div>
+        <div id="scanAlert" class="alert alert-error hidden">
+          <i data-lucide="alert-circle" style="width:15px;height:15px;"></i>
+          <span id="scanAlertMsg"></span>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary btn-full" onclick="lookupVoter()">
+            <i data-lucide="search" style="width:15px;height:15px;"></i> Search Voter
+          </button>
+          <button class="btn btn-ghost btn-full" onclick="startOCR()">
+            <i data-lucide="scan-text" style="width:15px;height:15px;"></i> Scan Card (OCR)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 2: Voter Found -->
+    <div class="screen" id="screen-voter">
+      <div class="page-hd">
+        <div class="page-hd-icon"><i data-lucide="user-check" style="width:20px;height:20px;"></i></div>
+        <div><h2>Voter Record</h2><p>Verify identity before proceeding</p></div>
+        <div class="step-badge">Step 2 of 10</div>
+      </div>
+      <div class="card" id="voterCardEl"></div>
+      <div id="votedBlockAlert" class="alert alert-error hidden">
+        <i data-lucide="ban" style="width:15px;height:15px;"></i>
+        <span>This voter has already cast their vote. Access denied.</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="resetFlow()">
+          <i data-lucide="arrow-left" style="width:15px;height:15px;"></i> Back
+        </button>
+        <button class="btn btn-primary btn-full" id="proceedToFaceBtn" onclick="startFace()">
+          <i data-lucide="camera" style="width:15px;height:15px;"></i> Proceed to Face Verification
+        </button>
+      </div>
+    </div>
+
+    <!-- Screen 3-4: Face Verification -->
+    <div class="screen" id="screen-face">
+      <div class="page-hd">
+        <div class="page-hd-icon"><i data-lucide="scan-face" style="width:20px;height:20px;"></i></div>
+        <div><h2>Biometric Verification</h2><p>Liveness detection + ArcFace identity match</p></div>
+        <div class="step-badge">Steps 3–4</div>
+      </div>
+
+      <div class="card-row">
+        <div>
+          <div class="camera-container">
+            <video id="cameraFeed" autoplay playsinline muted></video>
+            <div class="camera-overlay">
+              <div class="face-guide"><div class="scan-line"></div></div>
+            </div>
+            <div class="camera-status" id="camStatus">Initialising camera…</div>
+          </div>
+        </div>
+        <div>
+          <div class="alert alert-info" style="margin-bottom:14px;">
+            <i data-lucide="info" style="width:15px;height:15px;"></i>
+            <span>Look directly at the camera. Remove glasses if possible. Do not use a photo.</span>
+          </div>
+          <div id="faceScoreBox" class="hidden">
+            <div class="score-row">
+              <div class="score-label">Liveness</div>
+              <div class="score-track"><div class="score-fill" id="livenessBar" style="width:0%"></div></div>
+              <div class="score-pct" id="livenessVal">—</div>
+            </div>
+            <div class="score-row">
+              <div class="score-label">Face Match</div>
+              <div class="score-track"><div class="score-fill" id="matchBar" style="width:0%"></div></div>
+              <div class="score-pct" id="matchVal">—</div>
+            </div>
+          </div>
+          <div id="faceAlert" class="hidden" style="margin-top:12px;"></div>
+          <div class="btn-row" style="margin-top:16px;">
+            <button class="btn btn-primary btn-full" onclick="captureFace()">
+              <i data-lucide="aperture" style="width:15px;height:15px;"></i> Capture & Verify
+            </button>
+          </div>
+          <div style="margin-top:10px;">
+            <button class="btn btn-ghost btn-full" onclick="faceOTPFallback()">
+              <i data-lucide="smartphone" style="width:15px;height:15px;"></i> Use OTP Fallback
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 5-6: OTP -->
+    <div class="screen" id="screen-otp">
+      <div class="page-hd">
+        <div class="page-hd-icon"><i data-lucide="message-square-lock" style="width:20px;height:20px;"></i></div>
+        <div><h2>OTP Verification</h2><p>One-time password sent to registered mobile</p></div>
+        <div class="step-badge">Steps 6–7</div>
+      </div>
+
+      <div class="card" style="max-width: 460px; margin: 0 auto;">
+        <div class="alert alert-success" id="otpSentAlert">
+          <i data-lucide="check-circle" style="width:15px;height:15px;"></i>
+          <span>OTP dispatched to mobile ending in <strong id="mobileLast4">****</strong></span>
+        </div>
+        <div id="thermalAlert" class="alert alert-warning hidden">
+          <i data-lucide="printer" style="width:15px;height:15px;"></i>
+          <span>SMS failed. OTP has been printed on the booth thermal printer (valid 60 seconds).</span>
+        </div>
+
+        <div style="text-align:center; margin: 8px 0 6px;">
+          <span style="font-size:12px;color:var(--text-sec);">Enter 6-digit code</span>
+        </div>
+        <div class="otp-row">
+          <input class="otp-box" id="otp0" maxlength="1" type="tel" oninput="otpMove(this,0)">
+          <input class="otp-box" id="otp1" maxlength="1" type="tel" oninput="otpMove(this,1)">
+          <input class="otp-box" id="otp2" maxlength="1" type="tel" oninput="otpMove(this,2)">
+          <input class="otp-box" id="otp3" maxlength="1" type="tel" oninput="otpMove(this,3)">
+          <input class="otp-box" id="otp4" maxlength="1" type="tel" oninput="otpMove(this,4)">
+          <input class="otp-box" id="otp5" maxlength="1" type="tel" oninput="otpMove(this,5)">
+        </div>
+        <div class="otp-timer-row">
+          <span style="display:flex;align-items:center;gap:6px;">
+            <i data-lucide="clock" style="width:13px;height:13px;color:var(--text-dim);"></i> Expires in
+          </span>
+          <span class="timer-val" id="otpCountdown">05:00</span>
+        </div>
+        <div id="otpAlert" class="hidden"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="resendOTP()">
+            <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Resend
+          </button>
+          <button class="btn btn-primary btn-full" onclick="verifyOTP()">
+            <i data-lucide="shield-check" style="width:15px;height:15px;"></i> Verify OTP
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 7: Ballot -->
+    <div class="screen" id="screen-ballot">
+      <div class="page-hd">
+        <div class="page-hd-icon"><i data-lucide="vote" style="width:20px;height:20px;"></i></div>
+        <div>
+          <h2>Electronic Ballot</h2>
+          <p id="ballotConstituency">Select one candidate and confirm</p>
+        </div>
+        <div class="step-badge">Steps 8–9</div>
+      </div>
+
+      <div id="ballotGrid" class="ballot-grid"></div>
+
+      <div class="confirm-panel" id="confirmPanel">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:36px;height:36px;border-radius:8px;background:var(--saffron-dim);border:1px solid var(--saffron-mid);display:flex;align-items:center;justify-content:center;color:var(--saffron);">
+            <i data-lucide="check-square" style="width:18px;height:18px;"></i>
+          </div>
+          <div>
+            <div class="confirm-name" id="confirmName">—</div>
+            <div class="confirm-sub">Confirm your vote for this candidate?</div>
+          </div>
+        </div>
+        <div id="voteAlert" class="hidden" style="margin-bottom:10px;"></div>
+        <div class="btn-row" style="margin-top:0;">
+          <button class="btn btn-ghost" onclick="cancelVote()">
+            <i data-lucide="x" style="width:14px;height:14px;"></i> Change Selection
+          </button>
+          <button class="btn btn-success btn-full btn-lg" onclick="submitVote()">
+            <i data-lucide="check-circle-2" style="width:16px;height:16px;"></i> Confirm Vote
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 8: Receipt -->
+    <div class="screen" id="screen-receipt">
+      <div class="page-hd">
+        <div class="page-hd-icon" style="background:var(--success-dim);border-color:rgba(26,158,74,0.3);color:var(--success);">
+          <i data-lucide="receipt-text" style="width:20px;height:20px;"></i>
+        </div>
+        <div><h2>Vote Recorded</h2><p>Your vote has been securely submitted</p></div>
+        <div class="step-badge" style="background:var(--success-dim);border-color:rgba(26,158,74,0.3);color:var(--success);">Step 10 / Complete</div>
+      </div>
+
+      <div style="max-width:480px;margin:0 auto;">
+        <div class="text-center" style="margin-bottom:24px;">
+          <div class="success-mark">
+            <i data-lucide="check" style="width:32px;height:32px;"></i>
+          </div>
+          <div style="font-size:20px;font-weight:700;color:var(--success);margin-bottom:4px;">Vote Cast Successfully</div>
+          <div style="font-size:13px;color:var(--text-sec);">The vote has been recorded in the MatSetu ledger</div>
+        </div>
+
+        <div class="receipt-card" id="receiptEl"></div>
+
+        <div class="alert alert-warning" style="margin-top:14px;">
+          <i data-lucide="eye-off" style="width:15px;height:15px;"></i>
+          <span style="font-size:12px;">This receipt does not reveal your vote choice. Keep it private. (SEC-6)</span>
+        </div>
+
+        <button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="resetFlow()">
+          <i data-lucide="users" style="width:15px;height:15px;"></i> Next Voter
+        </button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+lucide.createIcons();
+
+// ── State ──────────────────────────────────────────────────────────
+const API = '';
+let voterData = null, ballotToken = null, selectedCandidate = null;
+let currentStep = 1, currentLang = 'hi', sessionVotes = 0;
+let otpTimer = null, reauthSecs = 1800, reauthInterval = null;
+let cameraStream = null;
+let workerToken = localStorage.getItem('workerToken') || '';
+let boothId = localStorage.getItem('boothId') || '';
+let workerId = localStorage.getItem('workerId') || '';
+let locationChain = JSON.parse(localStorage.getItem('locationChain') || '{}');
+
+// ── Clock ──────────────────────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('clockDisplay').textContent =
+    new Date().toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}, 1000);
+
+// ── Reauth countdown ───────────────────────────────────────────────
+function startReauthTimer() {
+  reauthSecs = 1800;
+  if (reauthInterval) clearInterval(reauthInterval);
+  reauthInterval = setInterval(() => {
+    reauthSecs--;
+    const m = String(Math.floor(reauthSecs/60)).padStart(2,'0');
+    const s = String(reauthSecs%60).padStart(2,'0');
+    document.getElementById('reauthTimer').textContent = `${m}:${s}`;
+    document.getElementById('reauthFill').style.width = (reauthSecs/1800*100) + '%';
+    if (reauthSecs <= 0) { clearInterval(reauthInterval); }
+  }, 1000);
+}
+startReauthTimer();
+
+// ── SSE tally ──────────────────────────────────────────────────────
+if (boothId) {
+  const es = new EventSource(`/api/v1/sse/tally/booth/${boothId}`);
+  es.onmessage = e => {
+    const d = JSON.parse(e.data);
+    if (d.event === 'booth_tally') {
+      document.getElementById('tallyCount').textContent = d.total?.toLocaleString('en-IN') || '0';
+      document.getElementById('boothVotes').textContent = d.total || 0;
+    }
+  };
+}
+
+// ── Navigation ─────────────────────────────────────────────────────
+function setStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.step-item').forEach(s => {
+    const sn = parseInt(s.dataset.step);
+    s.className = 'step-item' + (sn === n ? ' active' : sn < n ? ' done' : '');
+    const chk = s.querySelector('.step-check');
+    if (chk) chk.classList.toggle('hidden', sn >= n);
+  });
+}
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+// ── Lang ───────────────────────────────────────────────────────────
+function setLang(lang, el) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-chip').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+// ── Alerts ─────────────────────────────────────────────────────────
+function showAlert(id, msg, type='error') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const icons = {error:'alert-circle', success:'check-circle', warning:'alert-triangle', info:'info'};
+  el.className = `alert alert-${type}`;
+  el.innerHTML = `<i data-lucide="${icons[type]||'info'}" style="width:15px;height:15px;flex-shrink:0;"></i><span>${msg}</span>`;
+  el.classList.remove('hidden');
+  lucide.createIcons();
+}
+function hideAlert(id) { document.getElementById(id)?.classList.add('hidden'); }
+
+// ── API helper ─────────────────────────────────────────────────────
+async function api(path, method='GET', body=null) {
+  const opts = { method, headers: {'Content-Type':'application/json','Authorization':`Bearer ${workerToken}`} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.detail || 'API error');
+  return d;
+}
+
+// ── Step 1: Lookup ─────────────────────────────────────────────────
+async function lookupVoter() {
+  const epic = document.getElementById('epicInput').value.trim();
+  if (!epic) return showAlert('scanAlert','Enter an EPIC number to continue');
+  hideAlert('scanAlert');
+  try {
+    voterData = await api('/api/v1/voter/scan', 'POST', { epic_number: epic, booth_id: boothId, worker_id: workerId });
+    renderVoterCard();
+    setStep(2); showScreen('voter');
+  } catch(e) { showAlert('scanAlert', e.message); }
+}
+
+function renderVoterCard() {
+  const gMap = {M:'Male',F:'Female',O:'Other'};
+  const el = document.getElementById('voterCardEl');
+  el.innerHTML = `
+    <div class="voter-card">
+      <div class="voter-avatar"><i data-lucide="user" style="width:24px;height:24px;"></i></div>
+      <div class="voter-info">
+        <div class="voter-name">${voterData.full_name}</div>
+        <div class="voter-meta">
+          <div class="vm-row"><i data-lucide="credit-card" style="width:11px;height:11px;vertical-align:-1px;margin-right:3px;color:var(--text-dim);"></i>EPIC: <strong>${voterData.epic_number}</strong></div>
+          <div class="vm-row"><i data-lucide="calendar" style="width:11px;height:11px;vertical-align:-1px;margin-right:3px;color:var(--text-dim);"></i>DOB: <strong>${voterData.dob||'—'}</strong></div>
+          <div class="vm-row"><i data-lucide="user" style="width:11px;height:11px;vertical-align:-1px;margin-right:3px;color:var(--text-dim);"></i>Gender: <strong>${gMap[voterData.gender]||'—'}</strong></div>
+          <div class="vm-row"><i data-lucide="globe" style="width:11px;height:11px;vertical-align:-1px;margin-right:3px;color:var(--text-dim);"></i>Language: <strong>${(voterData.preferred_language||'hi').toUpperCase()}</strong></div>
+        </div>
+        ${voterData.has_voted
+          ? `<span class="voter-badge vb-voted"><i data-lucide="ban" style="width:11px;height:11px;"></i> Already Voted</span>`
+          : `<span class="voter-badge vb-ok"><i data-lucide="check-circle" style="width:11px;height:11px;"></i> Eligible to Vote</span>`}
+      </div>
+    </div>`;
+  lucide.createIcons();
+  const ba = document.getElementById('votedBlockAlert');
+  const pb = document.getElementById('proceedToFaceBtn');
+  if (voterData.has_voted) {
+    ba.classList.remove('hidden');
+    pb.disabled = true;
+  } else {
+    ba.classList.add('hidden');
+    pb.disabled = false;
+  }
+}
+
+function startOCR() { showAlert('scanAlert','Present card to camera — OCR extraction in progress…','info'); }
+
+// ── Step 3-4: Face ──────────────────────────────────────────────────
+async function startFace() {
+  if (voterData?.has_voted) return;
+  setStep(3); showScreen('face');
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480}});
+    document.getElementById('cameraFeed').srcObject = cameraStream;
+    document.getElementById('camStatus').textContent = 'Camera ready — align face within the oval';
+  } catch(e) {
+    showAlert('faceAlert', 'Camera access denied: ' + e.message);
+    document.getElementById('camStatus').textContent = 'Camera unavailable';
+  }
+}
+
+async function captureFace() {
+  document.getElementById('camStatus').textContent = 'Analysing…';
+  hideAlert('faceAlert');
+  const video = document.getElementById('cameraFeed');
+  const canvas = Object.assign(document.createElement('canvas'),{width:640,height:480});
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const b64 = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+  try {
+    const res = await api('/api/v1/voter/face-verify', 'POST', { voter_id: voterData.id, face_image_b64: b64 });
+    const sb = document.getElementById('faceScoreBox'); sb.classList.remove('hidden');
+    const lp = Math.round(res.liveness_score * 100);
+    const mp = Math.round(res.similarity * 100);
+    const lBar = document.getElementById('livenessBar');
+    const mBar = document.getElementById('matchBar');
+    lBar.style.width = lp + '%';
+    lBar.className = 'score-fill ' + (lp >= 70 ? 'good' : 'poor');
+    document.getElementById('livenessVal').textContent = lp + '%';
+    mBar.style.width = mp + '%';
+    mBar.className = 'score-fill ' + (mp >= 65 ? 'good' : 'poor');
+    document.getElementById('matchVal').textContent = mp + '%';
+    document.getElementById('camStatus').textContent = res.passed ? 'Verification passed' : 'Verification failed';
+    if (res.passed) { stopCamera(); setStep(5); await sendOTP(); }
+    else { showAlert('faceAlert', res.fail_reason || 'Face verification failed — use OTP fallback', 'warning'); }
+  } catch(e) { showAlert('faceAlert', e.message); }
+}
+
+function faceOTPFallback() { stopCamera(); setStep(5); sendOTP(); }
+function stopCamera() { cameraStream?.getTracks().forEach(t => t.stop()); cameraStream = null; }
+
+// ── Step 5-6: OTP ──────────────────────────────────────────────────
+async function sendOTP() {
+  setStep(6); showScreen('otp');
+  const lastFour = (voterData?.mobile || '').slice(-4) || '****';
+  document.getElementById('mobileLast4').textContent = lastFour;
+  try {
+    await api('/api/v1/voter/otp/send', 'POST', { voter_id: voterData.id, booth_id: boothId });
+    startOTPCountdown(300);
+  } catch(e) {
+    if (e.message.includes('thermal') || e.message.includes('sms')) {
+      document.getElementById('thermalAlert').classList.remove('hidden');
+      startOTPCountdown(60);
+    } else showAlert('otpAlert', e.message);
+  }
+}
+
+async function resendOTP() { if(otpTimer)clearInterval(otpTimer); await sendOTP(); }
+
+function startOTPCountdown(secs) {
+  let r = secs;
+  if (otpTimer) clearInterval(otpTimer);
+  otpTimer = setInterval(() => {
+    r--;
+    document.getElementById('otpCountdown').textContent =
+      String(Math.floor(r/60)).padStart(2,'0') + ':' + String(r%60).padStart(2,'0');
+    if (r <= 0) clearInterval(otpTimer);
+  }, 1000);
+}
+
+function otpMove(el, idx) {
+  el.value = el.value.replace(/\D/,'');
+  if (el.value && idx < 5) document.getElementById(`otp${idx+1}`).focus();
+}
+const getOTP = () => [0,1,2,3,4,5].map(i => document.getElementById(`otp${i}`).value).join('');
+
+async function verifyOTP() {
+  const otp = getOTP();
+  if (otp.length < 6) return showAlert('otpAlert', 'Enter all 6 digits');
+  hideAlert('otpAlert');
+  try {
+    const res = await api('/api/v1/voter/otp/verify', 'POST', { voter_id: voterData.id, otp, booth_id: boothId });
+    if (res.success) { ballotToken = res.ballot_token; clearInterval(otpTimer); setStep(8); await loadBallot(); }
+    else { showAlert('otpAlert', `Incorrect OTP. ${res.attempts_remaining} attempt(s) remaining.`, 'warning'); }
+  } catch(e) { showAlert('otpAlert', e.message); }
+}
+
+// ── Step 7: Ballot ─────────────────────────────────────────────────
+async function loadBallot() {
+  showScreen('ballot');
+  try {
+    const res = await api('/api/v1/vote/ballot', 'POST', { voter_id: voterData.id, ballot_token: ballotToken, booth_id: boothId, language: currentLang });
+    document.getElementById('ballotConstituency').textContent = res.constituency_name;
+    const grid = document.getElementById('ballotGrid');
+    grid.innerHTML = [
+      ...res.candidates.map(c => `
+        <div class="candidate-card" onclick="selectCandidate('${c.id}','${c.full_name}','${c.party_abbreviation||'IND'}',this)">
+          <div class="cand-serial">${c.serial_number}</div>
+          <div class="cand-symbol"><i data-lucide="user" style="width:22px;height:22px;"></i></div>
+          <div class="cand-name">${c.full_name}</div>
+          <div class="cand-party">${c.party_name||'Independent'}</div>
+          <div class="cand-abbr">${c.party_abbreviation||'IND'}</div>
+        </div>`),
+      `<div class="candidate-card" onclick="selectCandidate('NOTA','NOTA','NOTA',this)">
+          <div class="cand-serial">N</div>
+          <div class="cand-symbol"><i data-lucide="slash" style="width:22px;height:22px;"></i></div>
+          <div class="cand-name">NOTA</div>
+          <div class="cand-party">None of the Above</div>
+          <div class="cand-abbr">NOTA</div>
+        </div>`
+    ].join('');
+    lucide.createIcons();
+  } catch(e) { showAlert('voteAlert', e.message); }
+}
+
+function selectCandidate(id, name, party, el) {
+  selectedCandidate = {id, name, party};
+  document.querySelectorAll('.candidate-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('confirmName').textContent = `${name} (${party})`;
+  document.getElementById('confirmPanel').classList.add('show');
+}
+function cancelVote() {
+  selectedCandidate = null;
+  document.querySelectorAll('.candidate-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('confirmPanel').classList.remove('show');
+}
+
+// ── Step 9: Submit ─────────────────────────────────────────────────
+async function submitVote() {
+  if (!selectedCandidate) return;
+  hideAlert('voteAlert');
+  try {
+    const res = await api('/api/v1/vote/cast', 'POST', {
+      voter_id: voterData.id,
+      candidate_id: selectedCandidate.id === 'NOTA' ? '00000000-0000-0000-0000-000000000000' : selectedCandidate.id,
+      booth_id: boothId, worker_id: workerId,
+      ballot_token: ballotToken, location_chain: locationChain
+    });
+    sessionVotes++;
+    document.getElementById('sessionCount').textContent = `${sessionVotes} / 20`;
+    setStep(10); showReceipt(res);
+  } catch(e) { showAlert('voteAlert', e.message); }
+}
+
+// ── Step 10: Receipt ───────────────────────────────────────────────
+function showReceipt(res) {
+  showScreen('receipt');
+  document.getElementById('receiptEl').innerHTML = `
+    <div class="receipt-header">
+      <h3>MatSetu Vote Receipt</h3>
+      <p>Election Commission of India</p>
+    </div>
+    <div class="receipt-body">
+      <div class="receipt-field">
+        <div class="rf-label">Vote Identifier</div>
+        <div class="rf-value">${res.vote_id}</div>
+      </div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-field">
+        <div class="rf-label">ZK Inclusion Proof</div>
+        <div class="rf-value">${res.receipt_token}</div>
+      </div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-note">
+        <i data-lucide="shield" style="width:13px;height:13px;color:var(--text-dim);"></i>
+        Verify at matsetu.eci.gov.in/verify
+      </div>
+    </div>`;
+  lucide.createIcons();
+}
+
+// ── Reset ──────────────────────────────────────────────────────────
+function resetFlow() {
+  voterData = null; ballotToken = null; selectedCandidate = null;
+  document.getElementById('epicInput').value = '';
+  [0,1,2,3,4,5].forEach(i => { document.getElementById(`otp${i}`).value = ''; });
+  document.getElementById('confirmPanel').classList.remove('show');
+  document.getElementById('faceScoreBox')?.classList.add('hidden');
+  stopCamera(); setStep(1); showScreen('scan');
+  document.getElementById('epicInput').focus();
+}
+</script>
+</body>
+</html>

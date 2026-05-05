@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MatSetu — Vote Receipt Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+:root {
+  --saffron:#E8751A; --saffron-dim:rgba(232,117,26,.10); --saffron-mid:rgba(232,117,26,.22);
+  --green:#1A9E4A; --green-dim:rgba(26,158,74,.10);
+  --bg:#070B12; --surface:#101826; --surface2:#18243A; --border:#1E2D44; --border2:#263550;
+  --text:#ECF0FF; --text-sec:#7A8EAE; --text-dim:#3D4F6A;
+  --success:#1A9E4A; --success-dim:rgba(26,158,74,.10);
+  --error:#C93B3B; --error-dim:rgba(201,59,59,.10);
+  --warning:#C08A1A; --warning-dim:rgba(192,138,26,.10);
+  --info:#2563C4; --info-dim:rgba(37,99,196,.10);
+  --font:'DM Sans',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  --t:0.16s cubic-bezier(.4,0,.2,1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: var(--font); background: var(--bg); color: var(--text);
+  min-height: 100vh; -webkit-font-smoothing: antialiased;
+  display: flex; flex-direction: column;
+}
+::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* Grid bg */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: linear-gradient(rgba(30,45,68,.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30,45,68,.35) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Topbar */
+.topbar {
+  position: relative; z-index: 10;
+  height: 52px; background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 32px;
+}
+.tb-brand { display: flex; align-items: center; gap: 10px; }
+.tb-mark {
+  width: 28px; height: 28px; background: linear-gradient(135deg, var(--saffron), #b05a10);
+  border-radius: 7px; display: flex; align-items: center; justify-content: center; color: #fff;
+}
+.tb-name { font-size: 14px; font-weight: 700; letter-spacing: -.2px; }
+.tb-nav { display: flex; align-items: center; gap: 4px; }
+.tb-link {
+  padding: 6px 14px; border-radius: 7px; font-size: 13px; color: var(--text-sec);
+  cursor: pointer; transition: all var(--t); text-decoration: none; display: flex; align-items: center; gap: 6px;
+}
+.tb-link:hover { background: var(--surface2); color: var(--text); }
+.tb-link.active { background: var(--saffron-dim); color: var(--saffron); }
+
+/* Main layout */
+.main {
+  position: relative; z-index: 1;
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 40px 20px;
+}
+
+.verify-container { width: 100%; max-width: 560px; }
+
+/* Hero header */
+.hero {
+  text-align: center; margin-bottom: 32px;
+}
+.hero-icon {
+  width: 64px; height: 64px; margin: 0 auto 16px;
+  background: var(--saffron-dim); border: 1px solid var(--saffron-mid);
+  border-radius: 16px; display: flex; align-items: center; justify-content: center;
+  color: var(--saffron);
+}
+.hero h1 { font-size: 24px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 6px; }
+.hero p { font-size: 13px; color: var(--text-sec); line-height: 1.6; max-width: 380px; margin: 0 auto; }
+
+/* Input card */
+.input-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 24px; margin-bottom: 16px;
+}
+.fg { margin-bottom: 14px; }
+label {
+  display: block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .7px; color: var(--text-sec); margin-bottom: 6px;
+}
+.input-wrap { position: relative; }
+.input-icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--text-dim); pointer-events: none; display: flex;
+}
+input[type="text"] {
+  width: 100%; padding: 12px 14px 12px 40px;
+  background: var(--surface2); border: 1.5px solid var(--border2);
+  border-radius: 9px; color: var(--text);
+  font-family: var(--mono); font-size: 13px; letter-spacing: .5px;
+  outline: none; transition: border-color var(--t), box-shadow var(--t);
+}
+input[type="text"]:focus {
+  border-color: var(--saffron); box-shadow: 0 0 0 3px var(--saffron-dim);
+}
+input[type="text"]::placeholder { color: var(--text-dim); letter-spacing: 0; font-family: var(--font); }
+
+.btn-verify {
+  width: 100%; padding: 13px 20px;
+  background: var(--saffron); color: #fff; border: none; border-radius: 9px;
+  font-family: var(--font); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all var(--t);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 4px 16px rgba(232,117,26,.3);
+}
+.btn-verify:hover { background: #d0680f; box-shadow: 0 4px 20px rgba(232,117,26,.4); }
+.btn-verify:active { transform: scale(.99); }
+.btn-verify:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Result card */
+.result-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+  animation: slideUp .25s ease;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.result-header {
+  padding: 20px 24px; display: flex; align-items: flex-start; gap: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.result-status-icon {
+  width: 44px; height: 44px; border-radius: 11px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.rsi-valid { background: var(--success-dim); border: 1px solid rgba(26,158,74,.25); color: var(--success); }
+.rsi-invalid { background: var(--error-dim); border: 1px solid rgba(201,59,59,.25); color: var(--error); }
+.rsi-loading { background: var(--saffron-dim); border: 1px solid var(--saffron-mid); color: var(--saffron); }
+.result-header-text { flex: 1; }
+.result-title { font-size: 17px; font-weight: 700; margin-bottom: 3px; }
+.result-title.valid { color: var(--success); }
+.result-title.invalid { color: var(--error); }
+.result-sub { font-size: 12px; color: var(--text-sec); }
+
+.result-body { padding: 20px 24px; }
+
+.field { margin-bottom: 14px; }
+.field-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--text-dim); margin-bottom: 5px;
+  display: flex; align-items: center; gap: 6px;
+}
+.field-label svg { color: var(--text-dim); }
+.field-value {
+  font-family: var(--mono); font-size: 12px; color: var(--text);
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 10px 12px; border-radius: 8px; word-break: break-all; line-height: 1.6;
+}
+.field-value.highlight { border-color: rgba(26,158,74,.3); color: #5abf7a; }
+
+.result-divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+.proof-note {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; border-radius: 8px; font-size: 12px; line-height: 1.5;
+  background: var(--warning-dim); border: 1px solid rgba(192,138,26,.2); color: #c9a84a;
+}
+.proof-note svg { flex-shrink: 0; margin-top: 1px; }
+
+.result-footer {
+  padding: 14px 24px; border-top: 1px solid var(--border);
+  background: var(--surface2); display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--text-dim);
+}
+.result-footer a { color: var(--saffron); text-decoration: none; font-weight: 500; }
+.result-footer a:hover { text-decoration: underline; }
+
+/* Info section below */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.info-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px; display: flex; align-items: flex-start; gap: 10px;
+}
+.info-card-icon {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  background: var(--saffron-dim); border: 1px solid var(--saffron-mid);
+  display: flex; align-items: center; justify-content: center; color: var(--saffron);
+}
+.info-card h4 { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+.info-card p { font-size: 11px; color: var(--text-sec); line-height: 1.5; }
+
+/* Footer */
+.footer {
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--border); background: var(--surface);
+  padding: 14px 32px; display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; color: var(--text-dim);
+}
+.footer-links { display: flex; gap: 16px; }
+.footer-links a { color: var(--text-dim); text-decoration: none; transition: color var(--t); }
+.footer-links a:hover { color: var(--saffron); }
+
+/* Spinner */
+.spin { animation: sp .7s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="tb-brand">
+    <div class="tb-mark"><i data-lucide="landmark" style="width:14px;height:14px;"></i></div>
+    <span class="tb-name">MatSetu</span>
+    <span style="margin-left:4px;padding:2px 8px;background:var(--saffron-dim);border:1px solid var(--saffron-mid);border-radius:4px;font-size:10px;font-weight:700;color:var(--saffron);letter-spacing:.5px;">ECI</span>
+  </div>
+  <nav class="tb-nav">
+    <a class="tb-link active" href="/verify">
+      <i data-lucide="receipt-text" style="width:13px;height:13px;"></i> Verify Receipt
+    </a>
+    <a class="tb-link" href="/booth/">
+      <i data-lucide="monitor" style="width:13px;height:13px;"></i> Booth Terminal
+    </a>
+    <a class="tb-link" href="/admin/">
+      <i data-lucide="layout-dashboard" style="width:13px;height:13px;"></i> Admin Portal
+    </a>
+  </nav>
+</header>
+
+<!-- Main -->
+<main class="main">
+  <div class="verify-container">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-icon">
+        <i data-lucide="shield-check" style="width:30px;height:30px;"></i>
+      </div>
+      <h1>Vote Receipt Verification</h1>
+      <p>Enter your ZK receipt token from the thermal slip to confirm your vote was recorded in the MatSetu ledger.</p>
+    </div>
+
+    <!-- Input card -->
+    <div class="input-card">
+      <div class="fg">
+        <label>ZK Receipt Token</label>
+        <div class="input-wrap">
+          <div class="input-icon"><i data-lucide="hash" style="width:14px;height:14px;"></i></div>
+          <input type="text" id="tokenInput"
+            placeholder="ZK:abc123def456… (from thermal receipt)"
+            autocomplete="off" spellcheck="false"
+            onkeydown="if(event.key==='Enter')verify()">
+        </div>
+      </div>
+      <button class="btn-verify" id="verifyBtn" onclick="verify()">
+        <i data-lucide="search" style="width:16px;height:16px;" id="btnIcon"></i>
+        <span id="btnText">Verify Receipt</span>
+      </button>
+    </div>
+
+    <!-- Result (hidden initially) -->
+    <div id="resultCard" class="result-card hidden"></div>
+
+    <!-- Info grid -->
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-icon"><i data-lucide="eye-off" style="width:15px;height:15px;"></i></div>
+        <div>
+          <h4>Vote Privacy Protected</h4>
+          <p>This receipt confirms your vote was recorded. Your candidate choice is never revealed. (SEC-6)</p>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-icon"><i data-lucide="link" style="width:15px;height:15px;"></i></div>
+        <div>
+          <h4>Hash Chain Integrity</h4>
+          <p>Every vote is cryptographically chained using SHA-256. The ledger is append-only and tamper-evident.</p>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-icon"><i data-lucide="zap" style="width:15px;height:15px;"></i></div>
+        <div>
+          <h4>ZK Proof Technology</h4>
+          <p>Helios-style zero-knowledge proofs verify ledger inclusion without revealing any voter information.</p>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-icon"><i data-lucide="clock" style="width:15px;height:15px;"></i></div>
+        <div>
+          <h4>Permanent Record</h4>
+          <p>Once cast, votes are immutably recorded. The receipt token remains valid for post-election audit.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <div>Election Commission of India · MatSetu Digital Voting Platform v1.0</div>
+  <div class="footer-links">
+    <a href="/api/docs">API Docs</a>
+    <a href="/admin/">Admin Portal</a>
+    <a href="/booth/">Booth Terminal</a>
+  </div>
+</footer>
+
+<script>
+lucide.createIcons();
+
+async function verify() {
+  const token = document.getElementById('tokenInput').value.trim();
+  if (!token) {
+    showResult('error', 'No token entered', 'Please enter your ZK receipt token from the thermal slip.');
+    return;
+  }
+
+  // Loading state
+  setLoading(true);
+  showResult('loading', 'Verifying…', 'Checking the MatSetu ledger for your receipt token.');
+
+  try {
+    const res = await fetch(`/api/v1/vote/verify-receipt/${encodeURIComponent(token)}`);
+    const data = await res.json();
+
+    if (data.valid) {
+      document.getElementById('resultCard').innerHTML = `
+        <div class="result-header">
+          <div class="result-status-icon rsi-valid">
+            <i data-lucide="check-circle-2" style="width:22px;height:22px;"></i>
+          </div>
+          <div class="result-header-text">
+            <div class="result-title valid">Vote Confirmed</div>
+            <div class="result-sub">Your vote is recorded in the MatSetu ledger</div>
+          </div>
+          <span style="padding:3px 10px;background:var(--success-dim);border:1px solid rgba(26,158,74,.25);border-radius:4px;font-size:10px;font-weight:700;color:var(--success);letter-spacing:.4px;">VALID</span>
+        </div>
+        <div class="result-body">
+          <div class="field">
+            <div class="field-label"><i data-lucide="fingerprint" style="width:11px;height:11px;"></i> Vote Identifier</div>
+            <div class="field-value highlight">${data.vote_id}</div>
+          </div>
+          <div class="field">
+            <div class="field-label"><i data-lucide="clock" style="width:11px;height:11px;"></i> Recorded At</div>
+            <div class="field-value">${new Date(data.submitted_at).toLocaleString('en-IN', {weekday:'short',year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>
+          </div>
+          <div class="field">
+            <div class="field-label"><i data-lucide="shield" style="width:11px;height:11px;"></i> ZK Token Verified</div>
+            <div class="field-value">${token}</div>
+          </div>
+          <div class="result-divider"></div>
+          <div class="proof-note">
+            <i data-lucide="eye-off" style="width:14px;height:14px;"></i>
+            <span>Your vote choice is not stored in this receipt and is never revealed during verification. This confirms only that your vote exists in the ledger. (SEC-6 · Zero-Knowledge Proof)</span>
+          </div>
+        </div>
+        <div class="result-footer">
+          <i data-lucide="info" style="width:12px;height:12px;"></i>
+          <span>Verified against the MatSetu immutable vote ledger · Post-election hash chain audit available at <a href="#">matsetu.eci.gov.in/audit</a></span>
+        </div>`;
+    } else {
+      document.getElementById('resultCard').innerHTML = `
+        <div class="result-header">
+          <div class="result-status-icon rsi-invalid">
+            <i data-lucide="x-circle" style="width:22px;height:22px;"></i>
+          </div>
+          <div class="result-header-text">
+            <div class="result-title invalid">Receipt Not Found</div>
+            <div class="result-sub">${data.message || 'This token could not be matched in the ledger'}</div>
+          </div>
+          <span style="padding:3px 10px;background:var(--error-dim);border:1px solid rgba(201,59,59,.25);border-radius:4px;font-size:10px;font-weight:700;color:var(--error);letter-spacing:.4px;">INVALID</span>
+        </div>
+        <div class="result-body">
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:14px;background:var(--error-dim);border:1px solid rgba(201,59,59,.2);border-radius:8px;font-size:12px;color:#d97373;line-height:1.6;">
+            <i data-lucide="alert-circle" style="width:15px;height:15px;flex-shrink:0;margin-top:1px;"></i>
+            <span>The submitted receipt token was not found in the MatSetu vote ledger. Please check that you have entered the full token exactly as printed on your thermal slip. If you believe this is an error, contact your booth presiding officer.</span>
+          </div>
+        </div>
+        <div class="result-footer">
+          <i data-lucide="help-circle" style="width:12px;height:12px;"></i>
+          <span>Need help? Contact the Election Commission helpline or your constituency returning officer.</span>
+        </div>`;
+    }
+
+    document.getElementById('resultCard').classList.remove('hidden');
+    lucide.createIcons();
+  } catch (e) {
+    document.getElementById('resultCard').innerHTML = `
+      <div class="result-header">
+        <div class="result-status-icon rsi-invalid">
+          <i data-lucide="wifi-off" style="width:22px;height:22px;"></i>
+        </div>
+        <div class="result-header-text">
+          <div class="result-title invalid">Connection Error</div>
+          <div class="result-sub">Could not reach the MatSetu verification service</div>
+        </div>
+      </div>
+      <div class="result-body">
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:14px;background:var(--error-dim);border:1px solid rgba(201,59,59,.2);border-radius:8px;font-size:12px;color:#d97373;">
+          <i data-lucide="alert-circle" style="width:15px;height:15px;flex-shrink:0;margin-top:1px;"></i>
+          <span>${e.message}</span>
+        </div>
+      </div>`;
+    document.getElementById('resultCard').classList.remove('hidden');
+    lucide.createIcons();
+  } finally {
+    setLoading(false);
+  }
+}
+
+function showResult(type, title, sub) {
+  const icons = { loading: 'loader-2', error: 'x-circle', valid: 'check-circle-2' };
+  const iconClass = type === 'loading' ? `rsi-loading` : type === 'valid' ? 'rsi-valid' : 'rsi-invalid';
+  const spinClass = type === 'loading' ? ' spin' : '';
+  document.getElementById('resultCard').innerHTML = `
+    <div class="result-header">
+      <div class="result-status-icon ${iconClass}">
+        <i data-lucide="${icons[type]}" style="width:22px;height:22px;" class="${spinClass}"></i>
+      </div>
+      <div class="result-header-text">
+        <div class="result-title">${title}</div>
+        <div class="result-sub">${sub}</div>
+      </div>
+    </div>`;
+  document.getElementById('resultCard').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function setLoading(loading) {
+  const btn = document.getElementById('verifyBtn');
+  const icon = document.getElementById('btnIcon');
+  const text = document.getElementById('btnText');
+  btn.disabled = loading;
+  if (loading) {
+    icon.setAttribute('data-lucide', 'loader-2');
+    icon.className = 'spin';
+    text.textContent = 'Verifying…';
+  } else {
+    icon.setAttribute('data-lucide', 'search');
+    icon.className = '';
+    text.textContent = 'Verify Receipt';
+  }
+  lucide.createIcons();
+}
+</script>
+</body>
+</html>
