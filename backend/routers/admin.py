@@ -257,3 +257,73 @@ async def get_audit_log(
         }
         for l in logs
     ]
+
+
+@router.get("/district/{district_id}/anomaly-heatmap")
+async def anomaly_heatmap(
+    district_id: UUID,
+    payload: dict = Depends(require_role("T1", "T2", "T3", "T4")),
+    db: AsyncSession = Depends(get_db)
+):
+    from backend.models import Village
+    # Join Booth with AnomalyEvent and group by village_id
+    stmt = (
+        select(Booth.village_id, func.count(AnomalyEvent.id).label("anomaly_count"))
+        .join(AnomalyEvent, AnomalyEvent.booth_id == Booth.id)
+        .where(Booth.district_id == district_id)
+        .group_by(Booth.village_id)
+    )
+    result = await db.execute(stmt)
+    rows = result.all()
+    
+    heatmap = []
+    for village_id, count in rows:
+        if village_id:
+            heatmap.append({
+                "village_id": str(village_id),
+                "anomaly_density": count
+            })
+    return {"district_id": str(district_id), "heatmap": heatmap}
+
+
+@router.get("/district/{district_id}/booth-health")
+async def booth_health(
+    district_id: UUID,
+    payload: dict = Depends(require_role("T1", "T2", "T3", "T4")),
+    db: AsyncSession = Depends(get_db)
+):
+    from backend.models import BoothHeartbeat
+    stmt = (
+        select(BoothHeartbeat, Booth.booth_number, Booth.name)
+        .join(Booth, BoothHeartbeat.booth_id == Booth.id)
+        .where(Booth.district_id == district_id)
+    )
+    result = await db.execute(stmt)
+    rows = result.all()
+    
+    health_status = []
+    now = datetime.utcnow()
+    for hb, booth_number, booth_name in rows:
+        # Avoid timezone offset issues by using naive datetime if recorded_at is naive,
+        # but in this db models they are timezone aware. Let's ensure 'now' is aware if needed.
+        # SQLAlchemy returns naive if driver does not support tz, but default is timezone=True.
+        # So we use hb.last_seen_at.replace(tzinfo=None) to be safe for subtraction.
+        hb_time = hb.last_seen_at.replace(tzinfo=None) if hb.last_seen_at.tzinfo else hb.last_seen_at
+        time_diff = (now - hb_time).total_seconds()
+        
+        # Predictive failure logic based on missing heartbeats
+        risk_level = "GREEN"
+        if time_diff > 300: # 5 minutes
+            risk_level = "RED"
+        elif time_diff > 120: # 2 minutes
+            risk_level = "AMBER"
+            
+        health_status.append({
+            "booth_id": str(hb.booth_id),
+            "booth_number": booth_number,
+            "booth_name": booth_name,
+            "last_seen_at": hb.last_seen_at.isoformat(),
+            "time_since_last_seen_seconds": int(time_diff),
+            "risk_level": risk_level
+        })
+    return {"district_id": str(district_id), "booths": health_status}
