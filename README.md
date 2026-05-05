@@ -41,6 +41,24 @@ cryptographically-secured, end-to-end verifiable digital voting pipeline.
 
 ---
 
+## Working Proof of UI
+
+*Live captures demonstrating the functional MatSetu interfaces locally.*
+
+### Screenshot 1
+![Proof 1](assets/proof_1.png)
+
+### Screenshot 2
+![Proof 2](assets/proof_2.png)
+
+### Screenshot 3
+![Proof 3](assets/proof_3.png)
+
+### Screenshot 4
+![Proof 4](assets/proof_4.png)
+
+---
+
 ## Project Structure
 
 ```text
