@@ -5,7 +5,7 @@ from sqlalchemy import (
     Integer, Numeric, CHAR, ARRAY, UniqueConstraint, Index,
     CheckConstraint
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB, INET, TIMESTAMPTZ
+from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
 from sqlalchemy.orm import relationship
 from backend.database import Base
 
@@ -194,11 +194,11 @@ class Candidate(Base):
     party_id = Column(UUID(as_uuid=True), ForeignKey("parties.id"))
     constituency_id = Column(UUID(as_uuid=True), ForeignKey("constituencies.id"), nullable=False)
     symbol_url = Column(Text)
-    nomination_date = Column(TIMESTAMPTZ)
+    nomination_date = Column(DateTime(timezone=True))
     is_approved = Column(Boolean, default=False, nullable=False)
     # Uncontested election fields
     is_uncontested = Column(Boolean, default=False, nullable=False)
-    declared_elected_unopposed_at = Column(TIMESTAMPTZ, nullable=True)
+    declared_elected_unopposed_at = Column(DateTime(timezone=True), nullable=True)
     uncontested_declared_by = Column(UUID(as_uuid=True), ForeignKey("admin_accounts.id"), nullable=True)
     party = relationship("Party")
     constituency = relationship("Constituency")
@@ -219,8 +219,8 @@ class AdminAccount(Base):
     scope_id = Column(UUID(as_uuid=True))
     ip_allowlist = Column(ARRAY(INET))
     is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(TIMESTAMPTZ, default=datetime.utcnow)
-    last_login_at = Column(TIMESTAMPTZ)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    last_login_at = Column(DateTime(timezone=True))
 
 
 # ──────────────────────────────────────────────
@@ -235,7 +235,7 @@ class VoteLedger(Base):
     booth_id = Column(UUID(as_uuid=True), ForeignKey("booths.id"), nullable=False)
     worker_id = Column(UUID(as_uuid=True), ForeignKey("workers.id"), nullable=False)
     location_chain = Column(JSONB, nullable=False)   # 8-level hierarchy
-    submitted_at = Column(TIMESTAMPTZ, default=datetime.utcnow, nullable=False)
+    submitted_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     vote_hash = Column(Text, nullable=False)          # SHA-256
     prev_hash = Column(Text)                          # chain link
     is_valid = Column(Boolean, default=True, nullable=False)
@@ -256,10 +256,10 @@ class OTPRecord(Base):
     voter_id = Column(UUID(as_uuid=True), ForeignKey("voters.id"), nullable=False)
     otp_hash = Column(Text, nullable=False)    # SHA-256(otp)
     attempts = Column(Integer, default=0, nullable=False)
-    expires_at = Column(TIMESTAMPTZ, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
     is_used = Column(Boolean, default=False, nullable=False)
     delivery_method = Column(String(20), default="sms")   # sms / msg91 / thermal
-    created_at = Column(TIMESTAMPTZ, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 
 # ──────────────────────────────────────────────
@@ -277,7 +277,7 @@ class WorkerLocTrail(Base):
     gps_accuracy_m = Column(Integer)
     face_similarity = Column(Numeric(4, 3))
     device_id = Column(Text)
-    recorded_at = Column(TIMESTAMPTZ, default=datetime.utcnow, nullable=False)
+    recorded_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     anomaly_flags = Column(JSONB, default=dict)
     worker = relationship("Worker")
 
@@ -296,7 +296,7 @@ class AuditLog(Base):
     # OTP_PRINT_FALLBACK / UNCONTESTED_DECLARED / UNCONTESTED_REVERSED
     booth_id = Column(UUID(as_uuid=True), ForeignKey("booths.id"))
     metadata_ = Column("metadata", JSONB, default=dict)
-    logged_at = Column(TIMESTAMPTZ, default=datetime.utcnow, nullable=False)
+    logged_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     is_tampered = Column(Boolean, default=False, nullable=False)
     __table_args__ = (
         Index("ix_audit_log_action", "action"),
@@ -323,8 +323,8 @@ class AnomalyEvent(Base):
     is_resolved = Column(Boolean, default=False, nullable=False)
     resolved_by = Column(UUID(as_uuid=True), ForeignKey("admin_accounts.id"))
     override_reason = Column(Text)
-    created_at = Column(TIMESTAMPTZ, default=datetime.utcnow, nullable=False)
-    resolved_at = Column(TIMESTAMPTZ)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    resolved_at = Column(DateTime(timezone=True))
 
 
 # ──────────────────────────────────────────────
@@ -335,7 +335,7 @@ class BoothHeartbeat(Base):
     __tablename__ = "booth_heartbeats"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     booth_id = Column(UUID(as_uuid=True), ForeignKey("booths.id"), nullable=False, unique=True)
-    last_seen_at = Column(TIMESTAMPTZ, default=datetime.utcnow, nullable=False)
+    last_seen_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     version = Column(String(20))
     ip_address = Column(INET)
     booth = relationship("Booth")
