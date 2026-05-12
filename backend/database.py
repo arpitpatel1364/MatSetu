@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import event, text
+from fastapi import Request
 from backend.config import settings
 import logging
 
@@ -28,8 +29,17 @@ class Base(DeclarativeBase):
     pass
 
 
-async def get_db() -> AsyncSession:
+async def get_db(request: Request) -> AsyncSession:
     async with AsyncSessionLocal() as session:
+        # SEC-4: Set RLS context from request state if authenticated
+        payload = getattr(request.state, "admin_payload", None) or getattr(request.state, "worker_payload", None)
+        if payload:
+            await set_rls_context(
+                session,
+                scope_type=payload.get("scope_type", "all_india"),
+                scope_id=payload.get("scope_id"),
+                role=payload.get("role", "public")
+            )
         try:
             yield session
             await session.commit()

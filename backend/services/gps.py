@@ -47,17 +47,15 @@ async def check_worker_gps(
 
     booth_result = await db.execute(select(Booth).where(Booth.id == worker.booth_id))
     booth = booth_result.scalar_one_or_none()
-    if not booth or not booth.gps_lat or not booth.gps_lng:
-        return True, []   # No GPS data to validate against
+    if booth and booth.gps_lat and booth.gps_lng:
+        dist = haversine_distance_m(
+            float(booth.gps_lat), float(booth.gps_lng),
+            gps_lat, gps_lng
+        )
 
-    dist = haversine_distance_m(
-        float(booth.gps_lat), float(booth.gps_lng),
-        gps_lat, gps_lng
-    )
-
-    if dist > settings.GPS_MAX_DISTANCE_METERS:
-        flags.append(f"FLAG_GPS_VIOLATION:distance={dist:.0f}m")
-        logger.warning(f"Worker {worker_id} is {dist:.0f}m from booth {worker.booth_id}")
+        if dist > settings.GPS_MAX_DISTANCE_METERS:
+            flags.append(f"FLAG_GPS_VIOLATION:distance={dist:.0f}m")
+            logger.warning(f"Worker {worker_id} is {dist:.0f}m from booth {worker.booth_id}")
 
     # Check impossible movement
     cutoff = datetime.utcnow() - timedelta(minutes=settings.GPS_IMPOSSIBLE_MOVEMENT_MINUTES)

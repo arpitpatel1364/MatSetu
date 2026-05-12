@@ -13,12 +13,12 @@ from backend.database import get_db
 from backend.models import Voter, OTPRecord, Booth
 from backend.schemas.voter import (
     VoterScanRequest, VoterFaceVerifyRequest, VoterFaceVerifyResponse,
-    OTPSendRequest, OTPVerifyRequest, OTPVerifyResponse, VoterResponse
+    OTPSendRequest, OTPVerifyRequest, OTPVerifyResponse, VoterResponse, VoterScanOCRRequest
 )
-from backend.services.face import extract_embedding, check_liveness, cosine_similarity
-from backend.services.qdrant import search_face
+from backend.services.face import extract_embedding, check_liveness
 from backend.services.otp import create_otp, verify_otp, send_otp_sms
 from backend.services.audit import log_action, raise_anomaly
+from backend.services.qdrant import search_face, upsert_face
 from backend.services.ocr import extract_epic_from_image
 from backend.core.rls import get_current_worker
 from backend.config import settings
@@ -62,16 +62,14 @@ async def scan_voter(
     return VoterResponse.model_validate(voter)
 
 
-@router.post("/scan-ocr")
+@router.post("/scan-ocr", response_model=VoterResponse)
 async def scan_voter_ocr(
-    image_b64: str,
-    booth_id: UUID,
-    worker_id: UUID,
+    body: VoterScanOCRRequest,
     worker_payload: dict = Depends(get_current_worker),
     db: AsyncSession = Depends(get_db)
 ):
     """Step 1: OCR-based EPIC extraction from card image."""
-    epic = extract_epic_from_image(image_b64)
+    epic = extract_epic_from_image(body.image_b64)
     if not epic:
         raise HTTPException(status_code=422, detail="Could not extract EPIC from image")
     result = await db.execute(select(Voter).where(Voter.epic_number == epic))
@@ -224,3 +222,47 @@ async def has_voted_check(voter_id: UUID, db: AsyncSession = Depends(get_db)):
     if has_voted is None:
         raise HTTPException(status_code=404, detail="Voter not found")
     return {"voter_id": str(voter_id), "has_voted": has_voted}
+
+
+@router.post("/face-enroll")
+async def face_enroll(
+    body: VoterFaceVerifyRequest,
+    worker_payload: dict = Depends(get_current_worker),
+    db: AsyncSession = Depends(get_db)
+):
+    """Enroll voter face: extract embedding and upsert to Qdrant."""
+    voter_result = await db.execute(select(Voter).where(Voter.id == body.voter_id))
+    voter = voter_result.scalar_one_or_none()
+    if not voter:
+        raise HTTPException(status_code=404, detail="Voter not found")
+
+    # Liveness check
+    is_live, liveness_score = check_liveness(body.face_image_b64)
+    if not is_live:
+        raise HTTPException(status_code=403, detail="Liveness check failed")
+
+    # Extract embedding
+    embedding = extract_embedding(body.face_image_b64)
+    if embedding is None:
+        raise HTTPException(status_code=422, detail="No face detected")
+
+    # Upsert to Qdrant
+    point_id = str(uuid4())
+    success = upsert_face(
+        settings.QDRANT_COLLECTION_VOTERS,
+        point_id,
+        embedding,
+        {"epic_number": voter.epic_number, "voter_id": str(voter.id)}
+    )
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to store face embedding")
+
+    # Update voter record
+    voter.face_enrolled = True
+    voter.qdrant_vector_id = UUID(point_id)
+    
+    await log_action(db, "worker", UUID(worker_payload["sub"]), "FACE_ENROLL_VOTER",
+                     booth_id=voter.booth_id,
+                     metadata={"voter_id": str(voter.id)})
+    
+    return {"message": "Face enrolled successfully", "voter_id": str(voter.id)}

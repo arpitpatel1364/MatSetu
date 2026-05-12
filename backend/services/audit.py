@@ -15,6 +15,8 @@ VALID_ACTIONS = {
     "FACE_ENROLL_VOTER", "FACE_ENROLL_WORKER", "HASH_CHAIN_VERIFY"
 }
 
+SYSTEM_UUID = UUID("00000000-0000-0000-0000-000000000000")
+
 
 async def log_action(
     db: AsyncSession,
@@ -63,7 +65,7 @@ async def raise_anomaly(
     await log_action(
         db,
         actor_type="system",
-        actor_id=worker_id or voter_id or uuid4(),
+        actor_id=worker_id or voter_id or SYSTEM_UUID,
         action="ANOMALY_FLAG",
         booth_id=booth_id,
         metadata={"flag_type": flag_type, "details": details or {}}

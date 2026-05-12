@@ -10,6 +10,12 @@ class VoterScanRequest(BaseModel):
     worker_id: UUID
 
 
+class VoterScanOCRRequest(BaseModel):
+    image_b64: str
+    booth_id: UUID
+    worker_id: UUID
+
+
 class VoterFaceVerifyRequest(BaseModel):
     voter_id: UUID
     face_image_b64: str   # base64 JPEG

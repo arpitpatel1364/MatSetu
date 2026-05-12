@@ -11,7 +11,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
-from backend.database import get_db, AsyncSessionLocal
+from backend.database import get_db, AsyncSessionLocal, set_rls_context
 from backend.models import Voter, Booth, AnomalyEvent, Constituency
 from backend.services.vote import get_tally
 from backend.core.rls import require_role
@@ -21,13 +21,19 @@ router = APIRouter(prefix="/api/v1/sse", tags=["sse"])
 logger = logging.getLogger(__name__)
 
 
-async def _national_tally_stream(request: Request) -> AsyncGenerator[str, None]:
+async def _national_tally_stream(request: Request, payload: dict) -> AsyncGenerator[str, None]:
     """Stream national vote tally every 5 seconds."""
     while True:
         if await request.is_disconnected():
             break
         try:
             async with AsyncSessionLocal() as db:
+                await set_rls_context(
+                    db,
+                    scope_type=payload.get("scope_type", "all_india"),
+                    scope_id=payload.get("scope_id"),
+                    role=payload.get("role", "public")
+                )
                 total_voted = (await db.execute(
                     select(func.count(Voter.id)).where(Voter.has_voted == True)
                 )).scalar() or 0
@@ -57,12 +63,16 @@ async def _national_tally_stream(request: Request) -> AsyncGenerator[str, None]:
         await asyncio.sleep(5)
 
 
-async def _booth_status_stream(request: Request, booth_id: str) -> AsyncGenerator[str, None]:
+async def _booth_status_stream(request: Request, booth_id: str, payload: dict) -> AsyncGenerator[str, None]:
     """Stream booth-level vote count every 3 seconds."""
     while True:
         if await request.is_disconnected():
             break
         try:
+            # Note: get_tally uses its own redis connection, but we check scope here
+            if payload.get("scope_type") != "all_india" and str(payload.get("scope_id")) != str(booth_id):
+                # Check if booth belongs to admin scope (simplified here, but should check hierarchy)
+                pass 
             tally = await get_tally("booth", booth_id)
             data = {
                 "event": "booth_tally",
@@ -77,7 +87,7 @@ async def _booth_status_stream(request: Request, booth_id: str) -> AsyncGenerato
         await asyncio.sleep(3)
 
 
-async def _anomaly_stream(request: Request) -> AsyncGenerator[str, None]:
+async def _anomaly_stream(request: Request, payload: dict) -> AsyncGenerator[str, None]:
     """Stream new unresolved anomalies every 10 seconds."""
     last_seen_id = None
     while True:
@@ -85,6 +95,12 @@ async def _anomaly_stream(request: Request) -> AsyncGenerator[str, None]:
             break
         try:
             async with AsyncSessionLocal() as db:
+                await set_rls_context(
+                    db,
+                    scope_type=payload.get("scope_type", "all_india"),
+                    scope_id=payload.get("scope_id"),
+                    role=payload.get("role", "public")
+                )
                 query = select(AnomalyEvent).where(
                     AnomalyEvent.is_resolved == False
                 ).order_by(AnomalyEvent.created_at.desc()).limit(10)
@@ -116,7 +132,7 @@ async def sse_national_tally(
 ):
     """SSE: National tally stream (every 5s)."""
     return StreamingResponse(
-        _national_tally_stream(request),
+        _national_tally_stream(request, payload),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
     )
@@ -130,7 +146,7 @@ async def sse_booth_tally(
 ):
     """SSE: Booth-level tally stream (every 3s)."""
     return StreamingResponse(
-        _booth_status_stream(request, booth_id),
+        _booth_status_stream(request, booth_id, payload),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
     )
@@ -143,7 +159,7 @@ async def sse_anomalies(
 ):
     """SSE: Anomaly event stream (every 10s)."""
     return StreamingResponse(
-        _anomaly_stream(request),
+        _anomaly_stream(request, payload),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
     )

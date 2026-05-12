@@ -39,6 +39,8 @@ async def get_current_worker(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     if payload.get("role") != "T6":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Worker role required")
+    # Store in request state for RLS
+    request.state.worker_payload = payload
     return payload
 
 
