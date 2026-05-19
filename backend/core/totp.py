@@ -13,7 +13,6 @@ _cipher = Fernet(FERNET_KEY)
 def generate_totp_secret() -> str:
     return pyotp.random_base32()
 
-
 def encrypt_totp_secret(secret: str) -> str:
     return _cipher.encrypt(secret.encode()).decode()
 
