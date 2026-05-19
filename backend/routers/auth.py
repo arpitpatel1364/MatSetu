@@ -16,6 +16,7 @@ from jose import JWTError
 import logging
 from uuid import uuid4
 
+
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
 
