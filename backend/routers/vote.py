@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 from backend.database import get_db
@@ -34,7 +34,7 @@ async def get_ballot(
         raise HTTPException(status_code=401, detail="No active ballot session")
     if token_record["token"] != body.ballot_token:
         raise HTTPException(status_code=401, detail="Invalid ballot token")
-    if datetime.utcnow() > token_record["expires_at"]:
+    if datetime.now(timezone.utc) > token_record["expires_at"]:
         _ballot_tokens.pop(str(body.voter_id), None)
         raise HTTPException(status_code=401, detail="Ballot session expired")
     if token_record["booth_id"] != str(body.booth_id):
@@ -109,7 +109,7 @@ async def cast_vote_endpoint(
     token_record = _ballot_tokens.get(str(body.voter_id))
     if not token_record or token_record["token"] != body.ballot_token:
         raise HTTPException(status_code=401, detail="Invalid or expired ballot token")
-    if datetime.utcnow() > token_record["expires_at"]:
+    if datetime.now(timezone.utc) > token_record["expires_at"]:
         _ballot_tokens.pop(str(body.voter_id), None)
         raise HTTPException(status_code=401, detail="Ballot session expired")
 
@@ -150,7 +150,7 @@ async def tally(
     data = await get_tally(level, location_id)
     return TallyResponse(
         candidate_tallies=data["candidate_tallies"],
-        last_updated=datetime.utcnow()
+        last_updated=datetime.now(timezone.utc)
     )
 
 

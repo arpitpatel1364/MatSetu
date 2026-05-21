@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from uuid import UUID, uuid4
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from backend.database import get_db
 from backend.models import (
@@ -51,7 +51,7 @@ async def dashboard(
         total_booths=total_booths,
         anomaly_count=anomaly_count,
         uncontested_count=uncontested_count,
-        last_updated=datetime.utcnow()
+        last_updated=datetime.now(timezone.utc)
     )
 
 
@@ -211,7 +211,7 @@ async def override_anomaly(
     event.is_resolved = True
     event.resolved_by = UUID(payload["sub"])
     event.override_reason = body.reason
-    event.resolved_at = datetime.utcnow()
+    event.resolved_at = datetime.now(timezone.utc)
 
     await log_action(db, "admin", UUID(payload["sub"]), "ANOMALY_OVERRIDE",
                      booth_id=event.booth_id,
@@ -302,13 +302,9 @@ async def booth_health(
     rows = result.all()
     
     health_status = []
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     for hb, booth_number, booth_name in rows:
-        # Avoid timezone offset issues by using naive datetime if recorded_at is naive,
-        # but in this db models they are timezone aware. Let's ensure 'now' is aware if needed.
-        # SQLAlchemy returns naive if driver does not support tz, but default is timezone=True.
-        # So we use hb.last_seen_at.replace(tzinfo=None) to be safe for subtraction.
-        hb_time = hb.last_seen_at.replace(tzinfo=None) if hb.last_seen_at.tzinfo else hb.last_seen_at
+        hb_time = hb.last_seen_at if hb.last_seen_at.tzinfo else hb.last_seen_at.replace(tzinfo=timezone.utc)
         time_diff = (now - hb_time).total_seconds()
         
         # Predictive failure logic based on missing heartbeats

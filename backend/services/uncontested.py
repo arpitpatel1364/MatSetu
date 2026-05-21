@@ -2,7 +2,7 @@
 Uncontested election service.
 Implements all R1-R8 business rules from the master spec.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 from typing import Optional, List, Dict
 
@@ -83,7 +83,7 @@ async def declare_uncontested(
         )
 
     candidate: Candidate = eligibility["candidate"]
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     # R3: Update constituency status
     constituency_result = await db.execute(

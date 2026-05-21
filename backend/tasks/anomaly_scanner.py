@@ -1,6 +1,6 @@
 import logging
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from celery import shared_task
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -32,7 +32,7 @@ def scan_location_anomalies():
     
     with Session() as session:
         # Check recent worker loc trails (last 5 minutes)
-        recent_time = datetime.utcnow() - timedelta(minutes=5)
+        recent_time = datetime.now(timezone.utc) - timedelta(minutes=5)
         recent_trails = session.query(WorkerLocTrail).filter(WorkerLocTrail.recorded_at >= recent_time).all()
         
         for trail in recent_trails:
@@ -61,7 +61,7 @@ def scan_location_anomalies():
                         booth_id=booth.id,
                         worker_id=trail.worker_id,
                         details={"distance_m": round(distance_m, 2), "lat": float(trail.gps_lat), "lng": float(trail.gps_lng)},
-                        created_at=datetime.utcnow(),
+                        created_at=datetime.now(timezone.utc),
                         is_resolved=False
                     )
                     session.add(anomaly)
@@ -69,7 +69,7 @@ def scan_location_anomalies():
 
         # Cross-booth movement (velocity check)
         # Fetch last 2 trails for each active worker within last 1 hour
-        one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+        one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
         workers = session.query(Worker).filter(Worker.is_active == True).all()
         for worker in workers:
             trails = session.query(WorkerLocTrail).filter(
@@ -108,7 +108,7 @@ def scan_location_anomalies():
                                         "from_booth": str(t2.booth_id),
                                         "to_booth": str(t1.booth_id)
                                     },
-                                    created_at=datetime.utcnow(),
+                                    created_at=datetime.now(timezone.utc),
                                     is_resolved=False
                                 )
                                 session.add(anomaly)

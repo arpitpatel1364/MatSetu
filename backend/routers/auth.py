@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.database import get_db
 from backend.models import AdminAccount
@@ -50,7 +50,7 @@ async def admin_login(
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="IP not in allowlist")
 
     # Update last login
-    admin.last_login_at = datetime.utcnow()
+    admin.last_login_at = datetime.now(timezone.utc)
 
     token_data = {
         "sub": str(admin.id),
@@ -122,6 +122,6 @@ async def create_admin(
         scope_type=admin.scope_type or "",
         scope_id=admin.scope_id,
         is_active=True,
-        created_at=admin.created_at or datetime.utcnow(),
+        created_at=admin.created_at or datetime.now(timezone.utc),
         totp_uri=get_totp_uri(totp_secret, body.username)
     )

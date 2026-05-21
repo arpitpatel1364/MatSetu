@@ -499,9 +499,91 @@ input::placeholder { color: var(--text-dim); }
 .loading-row { display: flex; align-items: center; gap: 8px; padding: 20px; color: var(--text-sec); font-size: 13px; }
 .spinner { width: 18px; height: 18px; border: 2px solid var(--border2); border-top-color: var(--saffron); border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Worker Login Overlay ── */
+.login-wrap {
+  position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 40%, rgba(232, 117, 26, 0.08), transparent 70%), #070B12;
+}
+.login-card {
+  position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 40px; width: 450px; box-shadow: 0 24px 64px rgba(0,0,0,.7);
+}
+.login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+.login-title { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+.login-sub { font-size: 11px; color: var(--text-sec); letter-spacing: .5px; }
+.auth-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 24px; }
+.chip {
+  padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: .4px;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text-sec);
+  display: flex; align-items: center; gap: 4px;
+}
+.fg { margin-bottom: 14px; }
+.fg label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--text-sec); margin-bottom: 5px; }
+.input-wrap { position: relative; }
+.input-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; display: flex; }
+.fg input {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px;
+  color: var(--text); font-family: var(--font); font-size: 13px; outline: none; transition: border-color var(--t), box-shadow var(--t);
+  padding: 9px 12px 9px 36px;
+}
+.fg input:focus { border-color: var(--saffron); box-shadow: 0 0 0 3px var(--saffron-dim); }
+.tb-logout:hover { background: var(--error-dim); color: var(--error); }
 </style>
 </head>
 <body>
+
+<!-- Worker Login Overlay -->
+<div class="login-wrap" id="loginWrap" style="display: none;">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="brand-mark"><i data-lucide="landmark" style="width:20px;height:20px;"></i></div>
+      <div>
+        <div class="login-title">MatSetu Booth Terminal</div>
+        <div class="login-sub">Worker Registration & Login</div>
+      </div>
+    </div>
+    
+    <div class="auth-chips">
+      <span class="chip"><i data-lucide="shield" style="width:10px;height:10px;"></i> mTLS Cert</span>
+      <span class="chip"><i data-lucide="map-pin" style="width:10px;height:10px;"></i> GPS Scoped</span>
+      <span class="chip"><i data-lucide="scan" style="width:10px;height:10px;"></i> ArcFace Biometric</span>
+    </div>
+
+    <div id="loginAlert" class="alert alert-error hidden" style="margin-bottom:16px;"></div>
+
+    <div class="fg">
+      <label>Employee ID</label>
+      <div class="input-wrap">
+        <div class="input-icon"><i data-lucide="user" style="width:13px;height:13px;"></i></div>
+        <input type="text" id="loginEmpId" placeholder="EMP12345">
+      </div>
+    </div>
+
+    <div class="fg">
+      <label>Booth ID (UUID)</label>
+      <div class="input-wrap">
+        <div class="input-icon"><i data-lucide="map-pin" style="width:13px;height:13px;"></i></div>
+        <input type="text" id="loginBoothId" placeholder="00000000-0000-0000-0000-000000000000" style="font-family:var(--mono);">
+      </div>
+    </div>
+
+    <div class="camera-login-section" style="margin-bottom:20px;text-align:center;">
+      <label style="text-align:left;">Biometric Verification</label>
+      <div class="camera-container" style="position:relative;width:100%;height:180px;background:#000;border-radius:8px;overflow:hidden;border:1px solid var(--border);margin-bottom:8px;">
+        <video id="loginCameraFeed" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;display:block;"></video>
+        <div class="camera-overlay" style="position:absolute;inset:0;border:2px solid rgba(232,117,26,0.3);border-radius:8px;pointer-events:none;"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btnStartLoginCam" onclick="startLoginCamera()" style="width:100%;">
+        <i data-lucide="video" style="width:13px;height:13px;"></i> Start Camera
+      </button>
+    </div>
+
+    <button class="btn btn-primary btn-full" id="btnLoginSubmit" onclick="submitWorkerLogin()">
+      <i data-lucide="log-in" style="width:15px;height:15px;"></i> Capture & Authenticate
+    </button>
+  </div>
+</div>
 
 <!-- Topbar -->
 <header class="topbar">
@@ -534,6 +616,9 @@ input::placeholder { color: var(--text-dim); }
       <span class="stat-val" id="boothVotes">0</span>
     </div>
     <div class="clock-display" id="clockDisplay">00:00:00</div>
+    <div class="tb-logout hidden" onclick="doWorkerLogout()" id="logoutBtn" style="padding:0 20px;height:100%;border-left:1px solid var(--border);display:flex;align-items:center;cursor:pointer;color:var(--text-sec);gap:6px;font-size:13px;transition:all var(--t);">
+      <i data-lucide="log-out" style="width:14px;height:14px;"></i> Logout
+    </div>
   </div>
 </header>
 
@@ -876,6 +961,169 @@ let boothId = localStorage.getItem('boothId') || '';
 let workerId = localStorage.getItem('workerId') || '';
 let locationChain = JSON.parse(localStorage.getItem('locationChain') || '{}');
 
+// ── Worker Login ────────────────────────────────────────────────────
+let loginCameraStream = null;
+
+function showLoginOverlay() {
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('logoutBtn').classList.add('hidden');
+  lucide.createIcons();
+}
+function hideLoginOverlay() {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('logoutBtn').classList.remove('hidden');
+  if (loginCameraStream) {
+    loginCameraStream.getTracks().forEach(t => t.stop());
+    loginCameraStream = null;
+  }
+}
+
+async function startLoginCamera() {
+  try {
+    loginCameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false });
+    document.getElementById('loginCameraFeed').srcObject = loginCameraStream;
+    document.getElementById('btnStartLoginCam').textContent = '✓ Camera Active';
+  } catch(e) {
+    showLoginAlert('Camera access denied. Please allow camera permissions and retry.', 'error');
+  }
+}
+
+function captureLoginFrame() {
+  const video = document.getElementById('loginCameraFeed');
+  if (!video.srcObject) return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+function showLoginAlert(msg, type = 'error') {
+  const el = document.getElementById('loginAlert');
+  el.textContent = msg;
+  el.className = `alert alert-${type}`;
+  el.classList.remove('hidden');
+}
+
+async function submitWorkerLogin() {
+  const empId = document.getElementById('loginEmpId').value.trim();
+  const bId   = document.getElementById('loginBoothId').value.trim();
+  if (!empId) return showLoginAlert('Employee ID is required.');
+  if (!bId)   return showLoginAlert('Booth ID is required.');
+
+  const frameDataUrl = captureLoginFrame();
+  if (!frameDataUrl) return showLoginAlert('Please start the camera first and wait for the feed to appear.');
+
+  const btn = document.getElementById('btnLoginSubmit');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="display:inline-block;margin-right:6px;"></div> Authenticating…';
+
+  // Get GPS
+  let gpsLat = 0, gpsLng = 0, gpsAccuracy = 999;
+  try {
+    const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 }));
+    gpsLat = pos.coords.latitude;
+    gpsLng = pos.coords.longitude;
+    gpsAccuracy = Math.round(pos.coords.accuracy);
+  } catch(e) {
+    showLoginAlert('GPS access denied. Location is required for booth authentication.', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="log-in" style="width:15px;height:15px;"></i> Capture & Authenticate';
+    lucide.createIcons();
+    return;
+  }
+
+  const deviceId = navigator.userAgent.replace(/\s+/g, '_').substring(0, 64);
+
+  try {
+    const resp = await fetch(`${API}/api/v1/worker/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        employee_id: empId,
+        booth_id: bId,
+        face_image_b64: frameDataUrl,
+        gps_lat: gpsLat,
+        gps_lng: gpsLng,
+        gps_accuracy_m: gpsAccuracy,
+        device_id: deviceId
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      showLoginAlert(data.detail || 'Authentication failed. Check credentials and try again.');
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="log-in" style="width:15px;height:15px;"></i> Capture & Authenticate';
+      lucide.createIcons();
+      return;
+    }
+    // Success — persist to localStorage and update UI
+    workerToken = data.access_token;
+    boothId     = data.booth_id;
+    workerId    = data.worker_id;
+    localStorage.setItem('workerToken', workerToken);
+    localStorage.setItem('boothId',     boothId);
+    localStorage.setItem('workerId',    workerId);
+
+    document.getElementById('workerName').textContent = empId;
+    document.getElementById('boothName').textContent  = `Booth ${bId.substring(0, 8)}…`;
+
+    // Wire up SSE now that we have boothId
+    const es = new EventSource(`/api/v1/sse/tally/booth/${boothId}`);
+    es.onmessage = e => {
+      const d = JSON.parse(e.data);
+      if (d.event === 'booth_tally') {
+        document.getElementById('tallyCount').textContent = d.total?.toLocaleString('en-IN') || '0';
+        document.getElementById('boothVotes').textContent = d.total || 0;
+      }
+    };
+
+    if (data.reauth_interval_min) reauthSecs = data.reauth_interval_min * 60;
+    startReauthTimer();
+    hideLoginOverlay();
+  } catch(e) {
+    showLoginAlert('Network error. Check connection and retry.');
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="log-in" style="width:15px;height:15px;"></i> Capture & Authenticate';
+    lucide.createIcons();
+  }
+}
+
+function doWorkerLogout() {
+  if (!confirm('Log out the current worker? All in-progress sessions will be ended.')) return;
+  localStorage.removeItem('workerToken');
+  localStorage.removeItem('boothId');
+  localStorage.removeItem('workerId');
+  localStorage.removeItem('locationChain');
+  workerToken = ''; boothId = ''; workerId = '';
+  document.getElementById('workerName').textContent = 'Not authenticated';
+  document.getElementById('loginEmpId').value  = '';
+  document.getElementById('loginBoothId').value = '';
+  document.getElementById('loginAlert').classList.add('hidden');
+  showLoginOverlay();
+}
+
+// ── Boot guard: show login if no stored credentials ─────────────────
+function initApp() {
+  if (!workerToken || !boothId || !workerId) {
+    showLoginOverlay();
+  } else {
+    document.getElementById('workerName').textContent = workerId.substring(0, 8) + '…';
+    document.getElementById('boothName').textContent  = 'Booth ' + boothId.substring(0, 8) + '…';
+    document.getElementById('logoutBtn').classList.remove('hidden');
+    // Wire up SSE with existing boothId
+    const es = new EventSource(`/api/v1/sse/tally/booth/${boothId}`);
+    es.onmessage = e => {
+      const d = JSON.parse(e.data);
+      if (d.event === 'booth_tally') {
+        document.getElementById('tallyCount').textContent = d.total?.toLocaleString('en-IN') || '0';
+        document.getElementById('boothVotes').textContent = d.total || 0;
+      }
+    };
+  }
+}
+initApp();
+
 // ── Clock ──────────────────────────────────────────────────────────
 setInterval(() => {
   document.getElementById('clockDisplay').textContent =
@@ -896,18 +1144,6 @@ function startReauthTimer() {
   }, 1000);
 }
 startReauthTimer();
-
-// ── SSE tally ──────────────────────────────────────────────────────
-if (boothId) {
-  const es = new EventSource(`/api/v1/sse/tally/booth/${boothId}`);
-  es.onmessage = e => {
-    const d = JSON.parse(e.data);
-    if (d.event === 'booth_tally') {
-      document.getElementById('tallyCount').textContent = d.total?.toLocaleString('en-IN') || '0';
-      document.getElementById('boothVotes').textContent = d.total || 0;
-    }
-  };
-}
 
 // ── Navigation ─────────────────────────────────────────────────────
 function setStep(n) {

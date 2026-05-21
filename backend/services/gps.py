@@ -4,7 +4,7 @@ FLAG_GPS_VIOLATION: worker >500m from assigned booth at login.
 FLAG_IMPOSSIBLE_MOVEMENT: worker at 2 booths >10km apart within 10 min.
 """
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -58,7 +58,7 @@ async def check_worker_gps(
             logger.warning(f"Worker {worker_id} is {dist:.0f}m from booth {worker.booth_id}")
 
     # Check impossible movement
-    cutoff = datetime.utcnow() - timedelta(minutes=settings.GPS_IMPOSSIBLE_MOVEMENT_MINUTES)
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=settings.GPS_IMPOSSIBLE_MOVEMENT_MINUTES)
     recent_result = await db.execute(
         select(WorkerLocTrail)
         .where(WorkerLocTrail.worker_id == worker_id)

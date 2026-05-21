@@ -45,15 +45,29 @@ def verify_chain(db_url: str, booth_id: str = None, output_file: str = None):
     total_tampered = 0
     tampered_records = []
 
+    booth_secret = os.getenv("BOOTH_SECRET", "CHANGE_ME_BOOTH_SECRET_256BIT")
     for bid, votes in booths.items():
         prev_hash = "GENESIS"
         for i, vote in enumerate(votes):
-            # Recompute expected hash
-            # Note: BOOTH_SECRET needed — read from env
-            booth_secret = os.getenv("BOOTH_SECRET", "CHANGE_ME_BOOTH_SECRET_256BIT")
-            expected_hash = hashlib.sha256(
-                f"{vote.voter_id}|{vote.candidate_id}|{vote.submitted_at.isoformat()}|{booth_secret}|{prev_hash}".encode()
+            from datetime import timezone
+            dt_aware = vote.submitted_at
+            
+            # 1. Try timezone-aware format (e.g. including +00:00 offset if stored/retrieved as such)
+            dt_str_aware = dt_aware.isoformat() if dt_aware.tzinfo else dt_aware.replace(tzinfo=timezone.utc).isoformat()
+            expected_hash_aware = hashlib.sha256(
+                f"{vote.voter_id}|{vote.candidate_id}|{dt_str_aware}|{booth_secret}|{prev_hash}".encode()
             ).hexdigest()
+
+            # 2. Try timezone-naive format (e.g. naive UTC timestamp without offset)
+            dt_naive = dt_aware.astimezone(timezone.utc).replace(tzinfo=None) if dt_aware.tzinfo else dt_aware
+            dt_str_naive = dt_naive.isoformat()
+            expected_hash_naive = hashlib.sha256(
+                f"{vote.voter_id}|{vote.candidate_id}|{dt_str_naive}|{booth_secret}|{prev_hash}".encode()
+            ).hexdigest()
+
+            expected_hash = expected_hash_aware
+            if vote.vote_hash == expected_hash_naive:
+                expected_hash = expected_hash_naive
 
             if vote.vote_hash != expected_hash:
                 logger.error(
@@ -84,8 +98,9 @@ def verify_chain(db_url: str, booth_id: str = None, output_file: str = None):
 
     if output_file:
         import json
+        from datetime import timezone
         report = {
-            "verification_time": datetime.utcnow().isoformat(),
+            "verification_time": datetime.now(timezone.utc).isoformat(),
             "total_votes": len(rows),
             "valid_votes": total_ok,
             "tampered_votes": total_tampered,

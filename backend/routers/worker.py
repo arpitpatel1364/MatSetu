@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID, uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.database import get_db
 from backend.models import Worker, WorkerLocTrail, Booth
@@ -108,7 +108,7 @@ async def worker_login(
         gps_accuracy_m=body.gps_accuracy_m,
         face_similarity=similarity,
         device_id=body.device_id,
-        recorded_at=datetime.utcnow(),
+        recorded_at=datetime.now(timezone.utc),
         anomaly_flags=anomaly_flags
     )
     db.add(trail)
@@ -166,7 +166,7 @@ async def worker_reauth(
         id=uuid4(), worker_id=worker_id, event_type="REAUTH",
         booth_id=worker.booth_id, gps_lat=body.gps_lat, gps_lng=body.gps_lng,
         gps_accuracy_m=body.gps_accuracy_m, face_similarity=similarity,
-        recorded_at=datetime.utcnow(), anomaly_flags={}
+        recorded_at=datetime.now(timezone.utc), anomaly_flags={}
     )
     db.add(trail)
     await log_action(db, "worker", worker_id, "WORKER_REAUTH", booth_id=worker.booth_id)

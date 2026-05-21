@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import uuid4, UUID
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import secrets
 
 from backend.database import get_db
@@ -207,7 +207,7 @@ async def verify_voter_otp(
     ballot_token = secrets.token_urlsafe(32)
     _ballot_tokens[str(body.voter_id)] = {
         "token": ballot_token,
-        "expires_at": datetime.utcnow() + timedelta(minutes=2),
+        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=2),
         "booth_id": str(body.booth_id)
     }
 

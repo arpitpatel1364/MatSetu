@@ -6,7 +6,7 @@ R8: OTP_PRINT_FALLBACK if SMS fails (60-second expiry thermal slip).
 import hashlib
 import secrets
 import string
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 from uuid import UUID, uuid4
 import logging
@@ -37,7 +37,7 @@ async def create_otp(db: AsyncSession, voter_id: UUID, thermal: bool = False) ->
         voter_id=voter_id,
         otp_hash=_hash_otp(otp),
         attempts=0,
-        expires_at=datetime.utcnow() + timedelta(seconds=expire_seconds),
+        expires_at=datetime.now(timezone.utc) + timedelta(seconds=expire_seconds),
         is_used=False,
         delivery_method="thermal" if thermal else "sms"
     )
@@ -55,7 +55,7 @@ async def verify_otp(db: AsyncSession, voter_id: UUID, entered_otp: str) -> Tupl
         select(OTPRecord)
         .where(OTPRecord.voter_id == voter_id)
         .where(OTPRecord.is_used == False)
-        .where(OTPRecord.expires_at > datetime.utcnow())
+        .where(OTPRecord.expires_at > datetime.now(timezone.utc))
         .order_by(OTPRecord.created_at.desc())
         .limit(1)
     )

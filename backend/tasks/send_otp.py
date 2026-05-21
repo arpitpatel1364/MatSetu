@@ -56,7 +56,7 @@ def send_otp_task(self, voter_id: str, mobile: str, language: str, booth_id: str
 
     # Store OTP in DB
     with Session() as session:
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         import uuid
         from backend.models import OTPRecord
 
@@ -71,7 +71,7 @@ def send_otp_task(self, voter_id: str, mobile: str, language: str, booth_id: str
             voter_id=voter_id,
             otp_hash=otp_hash,
             attempts=0,
-            expires_at=datetime.utcnow() + timedelta(seconds=settings.OTP_EXPIRE_SECONDS),
+            expires_at=datetime.now(timezone.utc) + timedelta(seconds=settings.OTP_EXPIRE_SECONDS),
             is_used=False,
             delivery_method="sms"
         )
@@ -96,12 +96,12 @@ def send_otp_task(self, voter_id: str, mobile: str, language: str, booth_id: str
 
     # Update OTP record to thermal with 60-second expiry
     with Session() as session:
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         session.query(OTPRecord).filter(
             OTPRecord.voter_id == voter_id,
             OTPRecord.is_used == False
         ).update({
-            "expires_at": datetime.utcnow() + timedelta(seconds=settings.OTP_THERMAL_EXPIRE_SECONDS),
+            "expires_at": datetime.now(timezone.utc) + timedelta(seconds=settings.OTP_THERMAL_EXPIRE_SECONDS),
             "delivery_method": "thermal"
         })
         # Audit log

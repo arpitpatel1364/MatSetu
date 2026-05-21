@@ -7,7 +7,7 @@ SEC-3: All vote operations atomic: Redis pipeline + PostgreSQL transaction toget
 import hashlib
 import json
 import secrets
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict
 from uuid import UUID, uuid4
 
@@ -102,7 +102,7 @@ async def cast_vote(
         raise ValueError("Invalid or unapproved candidate")
 
     # 3. Build vote record
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     prev_hash = await get_prev_hash(db, booth_id)
     vote_id = uuid4()
     vote_hash = _compute_vote_hash(str(voter_id), str(candidate_id), now.isoformat(), prev_hash)

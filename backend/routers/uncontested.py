@@ -75,6 +75,8 @@ async def reverse_uncontested_endpoint(
         select(AdminAccount).where(AdminAccount.id == payload["sub"])
     )
     master_admin = master_result.scalar_one_or_none()
+    if not master_admin:
+        raise HTTPException(status_code=401, detail="Master admin not found")
 
     state_result = await db.execute(
         select(AdminAccount).where(AdminAccount.id == body.state_admin_id)

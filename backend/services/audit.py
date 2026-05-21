@@ -1,5 +1,5 @@
 from uuid import UUID, uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.models import AuditLog, AnomalyEvent
@@ -36,7 +36,7 @@ async def log_action(
         action=action,
         booth_id=booth_id,
         metadata_=metadata or {},
-        logged_at=datetime.utcnow(),
+        logged_at=datetime.now(timezone.utc),
         is_tampered=False
     )
     db.add(entry)
@@ -59,7 +59,7 @@ async def raise_anomaly(
         voter_id=voter_id,
         details=details or {},
         is_resolved=False,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(event)
     await log_action(
